@@ -85,7 +85,8 @@ class lexer
 		"[",
 		"]",
 		"\"",
-		"'"
+		"'",
+		"#"
 	];
 
 	immutable string[] types = [
@@ -163,7 +164,7 @@ class lexer
 
 		string token;
 
-		// whitespace token
+		// indentation token
 		if ( level )
 		{
 			foreach ( i; 0 .. level )
@@ -171,9 +172,13 @@ class lexer
 			tokens.insertFront( token );
 		}
 
-		// TODO: more intelligent tokenization
-		auto r = regex( " " );
-		tokens.insertAfter( tokens[], split( current_line, r ) );
+		auto r = regex( `".*"|'.'|[A-Za-z_]+|[0-9.]+|[.,:\[\]()+*/=%\n -]` );
+		while ( current_line != "" )
+		{
+			auto c = match( current_line, r ).captures;
+			current_line = current_line[c.hit.length .. $];
+			tokens.insertAfter( tokens[], c.hit );
+		}
 	}
 
 	bool is_empty()
