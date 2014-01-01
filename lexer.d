@@ -1,11 +1,12 @@
 import std.stdio;
 import std.regex;
+import std.container;
 
 class lexer
 {
 	int line_number = 1;
-	string current_line;
 	string indentation;
+	SList!string tokens;
 	File f;
 
 	immutable string[] assignment_operators = [
@@ -112,9 +113,10 @@ class lexer
 
 		// Find out what the file uses for indentation
 		auto r = regex( "^( +|\t)[^ \t]" );
+		string current_line;
 		while ( !indentation )
 		{
-			current_line = f.readln().dup;
+			current_line = f.readln();
 			auto c = match( current_line, r ).captures;
 			if ( !c.empty() )
 				indentation = c[1];
@@ -122,14 +124,30 @@ class lexer
 
 		// Go back to beginning
 		f.rewind();
-		this.parse_line();
+		this.tokenize_line();
 	}
 
 	string pop()
 	{
-		if ( !current_line )
-			this.parse_line();
+		if ( tokens.empty() )
+			this.tokenize_line();
 
+		string token;
+
+		if ( !tokens.empty() )
+		{
+			token = tokens.front;
+			tokens.removeFront();
+		}
+		
+		return token;
+	}
+
+	void tokenize_line()
+	{
+		string current_line = f.readln();
+		line_number += 1;
+	
 		// Check for indentation
 		int level;
 		if ( indentation.length < current_line.length )
@@ -145,27 +163,17 @@ class lexer
 
 		string token;
 
-		// return whitespace token
-		writeln( level );
+		// whitespace token
 		if ( level )
 		{
 			foreach ( i; 0 .. level )
 				token = token ~ indentation;
-			writeln( token );
-			return token;
+			tokens.insertFront( token );
 		}
 
-		// TODO: Do some tokenizing magic
-		token = current_line;
-		current_line = null;
-
-		return token;
-	}
-
-	void parse_line()
-	{
-		current_line = f.readln().dup;
-		line_number += 1;
+		// TODO: more intelligent tokenization
+		auto r = regex( " " );
+		tokens.insertAfter( tokens[], split( current_line, r ) );
 	}
 
 	bool is_empty()

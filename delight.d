@@ -29,6 +29,6 @@ void main( string args[] )
 		// Some operations...
 
 		// write out source
-		w.write( token );
+		w.write( token ~ " " );
 	}
 }
