@@ -3,6 +3,7 @@ import std.algorithm;
 import std.range;
 import std.conv;
 import lexer;
+import parser;
 
 void main( string args[] )
 {
@@ -20,15 +21,19 @@ void main( string args[] )
 
 	// Get tokens from lexer
 	lexer l = new lexer( args[1] );
+	parser p = new parser();
+	string token, result;
 
 	// While we still have tokens
 	while ( !l.is_empty() )
 	{
-		string token = l.pop();
+		// Get a token from the lexer
+		token = l.pop();
 
-		// Some operations...
+		// Process the token
+		result = p.process( token );
 
 		// write out source
-		w.write( token );
+		w.write( result );
 	}
 }
