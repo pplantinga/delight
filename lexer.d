@@ -35,9 +35,6 @@ class lexer
 
 	string pop()
 	{
-		if ( tokens.empty() )
-			this.tokenize_line();
-
 		string token;
 
 		if ( !tokens.empty() )
@@ -45,6 +42,9 @@ class lexer
 			token = tokens.front;
 			tokens.removeFront();
 		}
+		
+		if ( tokens.empty() )
+			this.tokenize_line();
 		
 		return token;
 	}
@@ -81,7 +81,7 @@ class lexer
 			}
 		}
 
-		auto r = regex( `".*"|'\.'|[A-Za-z_]+|[0-9.]+|[.,:\[\]()+*/=%\n -]` );
+		auto r = regex( `".*"|'\.'|[A-Za-z_]+|[0-9.]+|[+*/%~-]?=|[.,:\[\]()+*/=~%\n -]` );
 		while ( current_line != "" )
 		{
 			auto c = match( current_line, r ).captures;

@@ -95,7 +95,7 @@ class parser
 	];
 
 	immutable string[] types = [
-		"auto", "bool", "void",
+		"auto", "bool", "void", "string",
 		"byte", "short", "int", "long", "cent",
 		"ubyte", "ushort", "uint", "ulong", "ucent",
 		"float", "double", "real",
@@ -205,7 +205,8 @@ class parser
 				else
 					throw unexpected( token );
 			case "\n":
-				return ";\n" ~ start_state( l.pop() );
+				string endline = ";" ~ endline();
+				return endline ~ start_state( l.pop() );
 			default:
 				throw unexpected( token );
 		}
@@ -244,8 +245,11 @@ class parser
 					return token ~ declare_state( l.pop() );
 				else
 					throw unexpected( token );
+			case "assignment operator":
+				return " " ~ token ~ " " ~ expression_state( l.pop() );
 			case "\n":
-				return ";\n" ~ start_state( l.pop() );
+				string endline = ";" ~ endline();
+				return endline ~ start_state( l.pop() );
 			default:
 				throw unexpected( token );
 		}
@@ -280,10 +284,11 @@ class parser
 
 	string colon_state( string token )
 	{
-		if ( token == ":" )
-			return start_state( l.pop() );
+		string endline = endline();
+		if ( token == ":" && l.pop() == "\n" )
+			return endline ~ start_state( l.pop() );
 		else
-			throw new Exception( "On line " ~ to!string( l.line_number ) ~ " expected ':'" );
+			throw new Exception( "On line " ~ to!string( l.line_number ) ~ " expected ':\\n'" );
 	}
 
 	string identifier_state( string token )
@@ -295,8 +300,8 @@ class parser
 					return token ~ function_call_state( l.pop() );
 				else
 					throw unexpected( token );
-			case "assignment_operator":
-				return token ~ assignment_state( l.pop() );
+			case "assignment operator":
+				return " " ~ token ~ " " ~ expression_state( l.pop() );
 			default:
 				throw unexpected( token );
 		}
@@ -318,7 +323,7 @@ class parser
 		}
 	}
 
-	string assignment_state( string token )
+	string expression_state( string token )
 	{
 		switch ( identify_symbol( token ) )
 		{
@@ -331,14 +336,24 @@ class parser
 
 	string endline_state( string token )
 	{
+		string endline = ";" ~ endline();
 		if ( token == "\n" )
-			return ";\n" ~ start_state( l.pop() );
+			return endline ~ start_state( l.pop() );
 		else
 			throw unexpected( token );
 	}
 
+	/**
+	 * Terminates line, plus new line, plus indentation
+	 * don't call in return statement, gets called after other functions
+	 */
+	string endline()
+	{
+		return "\n" ~ join( repeat( l.indentation, l.indentation_level ) );
+	}
+
 	Exception unexpected( string token )
 	{
-		return new Exception( "On line " ~ to!string( l.line_number ) ~ ": unexpected token '" ~ token ~ "'" );
+		return new Exception( "On line " ~ to!string( l.line_number ) ~ ": unexpected " ~ identify_symbol( token ) ~ " '" ~ token ~ "'" );
 	}
 }

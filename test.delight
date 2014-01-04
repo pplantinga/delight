@@ -1,4 +1,6 @@
 import std.stdio
 
 void main():
-	writeln( "Hello, world!" )
+	string greeting = "Hello"
+	greeting ~= ", world!"
+	writeln( greeting )
