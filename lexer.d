@@ -20,7 +20,7 @@ class lexer
 		// Find out what the file uses for indentation
 		auto r = regex( "^( +|\t)[^ \t]" );
 		string current_line;
-		while ( !indentation )
+		while ( !indentation && !f.eof() )
 		{
 			current_line = f.readln();
 			auto c = match( current_line, r ).captures;
@@ -56,7 +56,7 @@ class lexer
 	
 		// Check for indentation
 		int level;
-		if ( indentation.length < current_line.length )
+		if ( indentation && indentation.length < current_line.length )
 		{
 			while ( current_line[0 .. indentation.length] == indentation )
 			{
