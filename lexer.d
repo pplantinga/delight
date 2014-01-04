@@ -1,10 +1,13 @@
 import std.stdio;
 import std.regex;
 import std.container;
+import std.conv;
+import std.math;
 
 class lexer
 {
-	int line_number = 1;
+	int line_number;
+	int indentation_level;
 	string indentation;
 	SList!string tokens;
 	File f;
@@ -66,25 +69,30 @@ class lexer
 
 		string token;
 
-		// indentation token
-		if ( level )
+		// indentation tokens
+		if ( level != indentation_level )
 		{
-			foreach ( i; 0 .. level )
-				token = token ~ indentation;
-			tokens.insertFront( token );
+			auto amount = level - indentation_level;
+			auto direction = amount / abs( amount );
+			while ( level != indentation_level )
+			{
+				tokens.insertFront( "indentation " ~ to!string( direction ) );
+				indentation_level += direction;
+			}
 		}
 
-		auto r = regex( `".*"|'.'|[A-Za-z_]+|[0-9.]+|[.,:\[\]()+*/=%\n -]` );
+		auto r = regex( `".*"|'\.'|[A-Za-z_]+|[0-9.]+|[.,:\[\]()+*/=%\n -]` );
 		while ( current_line != "" )
 		{
 			auto c = match( current_line, r ).captures;
 			current_line = current_line[c.hit.length .. $];
-			tokens.insertAfter( tokens[], c.hit );
+  		if ( c.hit != " " )
+				tokens.insertAfter( tokens[], c.hit );
 		}
 	}
 
 	bool is_empty()
 	{
-		return f.eof();
+		return tokens.empty() && f.eof();
 	}
 }

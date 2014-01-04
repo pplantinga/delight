@@ -6,6 +6,9 @@
 import lexer;
 import std.algorithm;
 import std.conv;
+import std.stdio;
+import std.range;
+import std.array;
 
 class parser
 {
@@ -92,7 +95,7 @@ class parser
 	];
 
 	immutable string[] types = [
-		"auto", "bool",
+		"auto", "bool", "void",
 		"byte", "short", "int", "long", "cent",
 		"ubyte", "ushort", "uint", "ulong", "ucent",
 		"float", "double", "real",
@@ -116,23 +119,28 @@ class parser
 
 	string identify_symbol( string token )
 	{
-		if ( find( [ " ", "\n" ], token ) )
+		if ( count( [
+					" ",
+					"\n",
+					"indentation 1",
+					"indentation -1"
+					], token ) )
 			return token;
-		else if ( find( assignment_operators, token ) )
+		else if ( count( assignment_operators, token ) )
 			return "assignment operator";
-		else if ( find( attributes, token ) )
+		else if ( count( attributes, token ) )
 			return "attribute";
-		else if ( find( logical, token ) )
+		else if ( count( logical, token ) )
 			return "logical";
-		else if ( find( operators, token ) )
+		else if ( count( operators, token ) )
 			return "operator";
-		else if ( find( punctuation, token ) )
+		else if ( count( punctuation, token ) )
 			return "punctuation";
-		else if ( find( statements, token ) )
+		else if ( count( statements, token ) )
 			return "statement";
-		else if ( find( types, token ) )
+		else if ( count( types, token ) )
 			return "type";
-		else if ( find( user_types, token ) )
+		else if ( count( user_types, token ) )
 			return "user type";
 		else
 			return "identifier";
@@ -145,17 +153,32 @@ class parser
 
 	string start_state( string token )
 	{
+		if ( l.is_empty() )
+		{
+			if ( token == "indentation -1" )
+				return "}";
+			else
+				throw unexpected( token );
+		}
+
+		string indent = join( repeat( l.indentation, l.indentation_level ) );
 		switch ( identify_symbol( token ) )
 		{
 			case "statement":
 				if ( token == "import" )
-					return token ~ im_state( l.pop() );
+					return token ~ " " ~ im_state( l.pop() );
 				else
 					throw unexpected( token );
 			case "type":
-				return token ~ declare_state( l.pop() );
+				return token ~ " " ~ declare_state( l.pop() );
 			case "\n":
-				return token ~ start_state( l.pop() );
+				return token ~ indent ~ start_state( l.pop() );
+			case "identifier":
+				return token ~ identifier_state( l.pop() );
+			case "indentation 1":
+				return "{\n" ~ indent ~ start_state( l.pop() );
+			case "indentation -1":
+				return "}\n" ~ indent ~ start_state( l.pop() );
 			default:
 				throw unexpected( token );
 		}
@@ -166,7 +189,7 @@ class parser
 		switch ( identify_symbol( token ) )
 		{
 			case "identifier":
-				return library_state( l.pop() );
+				return token ~ library_state( l.pop() );
 			default:
 				throw unexpected( token );
 		}
@@ -177,10 +200,10 @@ class parser
 		switch ( identify_symbol( token ) )
 		{
 			case "punctuation":
-				if ( token != "." )
-					throw unexpected( token );
-				else
+				if ( token == "." )
 					return token ~ period_state( l.pop() );
+				else
+					throw unexpected( token );
 			case "\n":
 				return ";\n" ~ start_state( l.pop() );
 			default:
@@ -257,33 +280,10 @@ class parser
 
 	string colon_state( string token )
 	{
-		switch ( token )
-		{
-			case "punctuation":
-				if ( token == ":" )
-					return " {" ~ ready_state( l.pop() );
-				else
-					throw unexpected( token );
-			default:
-				throw new Exception( "On line " ~ to!string( l.line_number ) ~ " expected ':'" );
-		}
-	}
-
-	string ready_state( string token )
-	{
-		if ( l.is_empty() )
-			return "";
-		switch ( identify_symbol( token ) )
-		{
-			case "\n":
-				return token ~ ready_state( l.pop() );
-			case "type":
-				return token ~ declare_state( l.pop() );
-			case "identifier":
-				return token ~ identifier_state( l.pop() );
-			default:
-				throw unexpected( token );
-		}
+		if ( token == ":" )
+			return start_state( l.pop() );
+		else
+			throw new Exception( "On line " ~ to!string( l.line_number ) ~ " expected ':'" );
 	}
 
 	string identifier_state( string token )
@@ -332,7 +332,7 @@ class parser
 	string endline_state( string token )
 	{
 		if ( token == "\n" )
-			return ";\n" ~ ready_state( l.pop() );
+			return ";\n" ~ start_state( l.pop() );
 		else
 			throw unexpected( token );
 	}
