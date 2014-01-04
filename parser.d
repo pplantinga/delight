@@ -9,6 +9,7 @@ import std.conv;
 import std.stdio;
 import std.range;
 import std.array;
+import std.file;
 
 class parser
 {
@@ -150,6 +151,22 @@ class parser
 	{
 		return start_state( l.pop() );
 	}
+	unittest
+	{
+		auto f1 = File( "test1.delight", "w" );
+		f1.write( "import std.stdio\n" );
+		f1.close();
+		parser p1 = new parser( "test1.delight" );
+		assert( p1.parse() == "import std.stdio;\n" );
+		std.file.remove( "test1.delight" );
+
+		auto f2 = File( "test2.delight", "w" );
+		f2.write( "void main():\n\tstring greeting\n" );
+		f2.close();
+		parser p2 = new parser( "test2.delight" );
+		assert( p2.parse() == "void main()\n{\n\tstring greeting;\n}" );
+		std.file.remove( "test2.delight" );
+	}
 
 	string start_state( string token )
 	{
@@ -157,6 +174,8 @@ class parser
 		{
 			if ( token == "indentation -1" )
 				return "}";
+			else if ( token == "" )
+				return "";
 			else
 				throw unexpected( token );
 		}
