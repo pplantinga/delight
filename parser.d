@@ -149,7 +149,22 @@ class parser
 	
 	string parse()
 	{
-		return start_state( l.pop() );
+		string result;
+
+		while ( !l.is_empty() )
+		{
+			try
+			{
+				result ~= start_state( l.pop() );
+			}
+			catch ( Exception e )
+			{
+				writeln( e.msg );
+				return result;
+			}
+		}
+
+		return result;
 	}
 	unittest
 	{
@@ -191,13 +206,13 @@ class parser
 			case "type":
 				return token ~ " " ~ declare_state( l.pop() );
 			case "\n":
-				return token ~ indent ~ start_state( l.pop() );
+				return token ~ indent;
 			case "identifier":
 				return token ~ identifier_state( l.pop() );
 			case "indentation 1":
-				return "{\n" ~ indent ~ start_state( l.pop() );
+				return "{\n" ~ indent;
 			case "indentation -1":
-				return "}\n" ~ indent ~ start_state( l.pop() );
+				return "}\n" ~ indent;
 			default:
 				throw unexpected( token );
 		}
@@ -224,8 +239,7 @@ class parser
 				else
 					throw unexpected( token );
 			case "\n":
-				string endline = ";" ~ endline();
-				return endline ~ start_state( l.pop() );
+				return ";" ~ endline();
 			default:
 				throw unexpected( token );
 		}
@@ -267,8 +281,7 @@ class parser
 			case "assignment operator":
 				return " " ~ token ~ " " ~ expression_state( l.pop() );
 			case "\n":
-				string endline = ";" ~ endline();
-				return endline ~ start_state( l.pop() );
+				return ";" ~ endline();
 			default:
 				throw unexpected( token );
 		}
@@ -303,9 +316,8 @@ class parser
 
 	string colon_state( string token )
 	{
-		string endline = endline();
 		if ( token == ":" && l.pop() == "\n" )
-			return endline ~ start_state( l.pop() );
+			return endline();
 		else
 			throw new Exception( "On line " ~ to!string( l.line_number ) ~ " expected ':\\n'" );
 	}
@@ -355,9 +367,8 @@ class parser
 
 	string endline_state( string token )
 	{
-		string endline = ";" ~ endline();
 		if ( token == "\n" )
-			return endline ~ start_state( l.pop() );
+			return ";" ~ endline();
 		else
 			throw unexpected( token );
 	}
