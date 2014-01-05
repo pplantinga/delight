@@ -23,7 +23,7 @@ class parser
 		"/=",
 		"%=",
 		"~=",
-		"^^="
+		"^="
 	];
 	
 	immutable string[] attributes = [
@@ -60,7 +60,7 @@ class parser
 		"/",
 		"%",
 		"~",
-		"^^"
+		"^"
 	];
 
 	immutable string[] punctuation = [
