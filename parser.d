@@ -85,7 +85,8 @@ class parser
 		"]",
 		"\"",
 		"'",
-		"#"
+		"#",
+		"->"
 	];
 
 	/** These do things. */
