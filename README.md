@@ -25,7 +25,7 @@ In delight, as in python, scope is determined by indentation. You can indent wit
 
 Delight is strongly typed, like D, but can do type inference using the D keyword auto. Function definitions start with something like Haskell's type definitions. Templates can be easily created by using T or some such instead of a type. Leaving off parameters works as expected, and leaving off a return type returns void.
 
-Functions are like mathematical functions, they don't have side-effects. Procedures can do whatever they want. And methods are part of a class definition, and thus make some change to the class internals.
+Functions are like mathematical functions, they don't have side-effects. Procedures don't return anything. And methods are part of a class definition, and thus make some change to the class internals. I'm still looking for a good term for something that has side-effects and returns something...
 
 Like python, delight leans towards using keywords over symbols. Examples: in, less than, and, equals, etc. The exceptions are operators and some punctuation, like "," "->" "[" "+=" "^" etc.
 
