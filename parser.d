@@ -1,6 +1,12 @@
 /**
- * Parser takes tokens one at a time and
- * - checks for syntax errors
+ * A parser for the "Delight" programming language.
+ * Author: Peter Plantinga
+ *
+ * This "Delightful" parser
+ * - is initialized with a string
+ *   containing the name of the source code file
+ * - breaks code into tokens with a lexer
+ * - checks for syntax errors in the source code
  * - generates valid d code
  */
 import lexer;
@@ -13,8 +19,10 @@ import std.file;
 
 class parser
 {
+	/** Breaks source code into tokens */
 	lexer l;
 
+	/** These give a new value to a variable */
 	immutable string[] assignment_operators = [
 		"=",
 		"+=",
@@ -26,6 +34,7 @@ class parser
 		"^="
 	];
 	
+	/** These are used when declaring things. */
 	immutable string[] attributes = [
 		"abstract",
 		"const",
@@ -43,6 +52,7 @@ class parser
 		"synchronized"
 	];
 
+	/** Compare and contrast, producing booleans. */
 	immutable string[] logical = [
 		"and",
 		"equals",
@@ -53,6 +63,7 @@ class parser
 		"or"
 	];
 
+	/** All about combining literals and variables creating expressions. */
 	immutable string[] operators = [
 		"+",
 		"-",
@@ -63,6 +74,7 @@ class parser
 		"^"
 	];
 
+	/** These do weird stuff. */
 	immutable string[] punctuation = [
 		",",
 		".",
@@ -76,6 +88,7 @@ class parser
 		"#"
 	];
 
+	/** These do things. */
 	immutable string[] statements = [
 		"assert",
 		"break",
@@ -95,6 +108,7 @@ class parser
 		"while"
 	];
 
+	/** How is stuff stored in memory? */
 	immutable string[] types = [
 		"auto", "bool", "void", "string",
 		"byte", "short", "int", "long", "cent",
@@ -105,6 +119,7 @@ class parser
 		"char", "wchar", "dchar"
 	];
 
+	/** More complicated types. */
 	immutable string[] user_types = [
 		"alias",
 		"class",
@@ -113,12 +128,18 @@ class parser
 		"union"
 	];
 
+	/** Default initializer for unittests and stuff */
+	this() {}
+
+	/** Initialize with a string containing location of source code. */
 	this( string filename )
 	{
+		/** Lexer parses source into tokens */
 		l = new lexer( filename );
 	}
 
-	string identify_symbol( string token )
+	/** What kind of thing is this token? */
+	string identify_token( string token )
 	{
 		if ( count( [
 					" ",
@@ -145,6 +166,29 @@ class parser
 			return "user type";
 		else
 			return "identifier";
+	}
+	unittest
+	{
+		parser p = new parser();
+		assert( p.identify_token( "=" ) == "assignment operator" );
+		assert( p.identify_token( "+=" ) == "assignment operator" );
+		assert( p.identify_token( "%=" ) == "assignment operator" );
+		assert( p.identify_token( "~=" ) == "assignment operator" );
+		assert( p.identify_token( "pure" ) == "attribute" );
+		assert( p.identify_token( "and" ) == "logical" );
+		assert( p.identify_token( "less than" ) == "logical" );
+		assert( p.identify_token( "-" ) == "operator" );
+		assert( p.identify_token( "^" ) == "operator" );
+		assert( p.identify_token( "." ) == "punctuation" );
+		assert( p.identify_token( ":" ) == "punctuation" );
+		assert( p.identify_token( "for" ) == "statement" );
+		assert( p.identify_token( "if" ) == "statement" );
+		assert( p.identify_token( "char" ) == "type" );
+		assert( p.identify_token( "string" ) == "type" );
+		assert( p.identify_token( "int" ) == "type" );
+		assert( p.identify_token( "long" ) == "type" );
+		assert( p.identify_token( "class" ) == "user type" );
+		assert( p.identify_token( "asdf" ) == "identifier" );
 	}
 	
 	string parse()
@@ -181,8 +225,16 @@ class parser
 		parser p2 = new parser( "test2.delight" );
 		assert( p2.parse() == "void main()\n{\n\tstring greeting;\n}" );
 		std.file.remove( "test2.delight" );
+
+		auto f3 = File( "test3.delight", "w" );
+		f3.write( "void main():\n\twriteln( \"Hello, world!\" )\n" );
+		f3.close();
+		parser p3 = new parser( "test3.delight" );
+		assert( p3.parse() == "void main()\n{\n\twriteln( \"Hello, world!\" );\n}" );
+		std.file.remove( "test3.delight" );
 	}
 
+	/** The starting state for the parser */
 	string start_state( string token )
 	{
 		if ( l.is_empty() )
@@ -196,7 +248,7 @@ class parser
 		}
 
 		string indent = join( repeat( l.indentation, l.indentation_level ) );
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "statement":
 				if ( token == "import" )
@@ -220,7 +272,7 @@ class parser
 
 	string im_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "identifier":
 				return token ~ library_state( l.pop() );
@@ -231,7 +283,7 @@ class parser
 
 	string library_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "punctuation":
 				if ( token == "." )
@@ -247,7 +299,7 @@ class parser
 
 	string period_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "identifier":
 				return token ~ library_state( l.pop() );
@@ -258,7 +310,7 @@ class parser
 
 	string declare_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "identifier":
 				return token ~ declared_state( l.pop() );
@@ -269,7 +321,7 @@ class parser
 
 	string declared_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "punctuation":
 				if ( token == "(" )
@@ -289,7 +341,7 @@ class parser
 
 	string function_declaration_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "type":
 				return token ~ function_variable_state( l.pop() );
@@ -305,7 +357,7 @@ class parser
 
 	string function_variable_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "identifier":
 				return token ~ function_declaration_state( l.pop() );
@@ -324,7 +376,7 @@ class parser
 
 	string identifier_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "punctuation":
 				if ( token == "(" )
@@ -340,7 +392,7 @@ class parser
 
 	string function_call_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "identifier":
 				return token ~ function_call_state( l.pop() );
@@ -356,7 +408,7 @@ class parser
 
 	string expression_state( string token )
 	{
-		switch ( identify_symbol( token ) )
+		switch ( identify_token( token ) )
 		{
 			case "identifier":
 				return token ~ endline_state( l.pop() );
@@ -374,16 +426,19 @@ class parser
 	}
 
 	/**
-	 * Terminates line, plus new line, plus indentation
-	 * don't call in return statement, gets called after other functions
+	 * New line, plus indentation
 	 */
 	string endline()
 	{
 		return "\n" ~ join( repeat( l.indentation, l.indentation_level ) );
 	}
 
+	/**
+	 * We didn't expect to find this kind of token!
+	 * so generate an exception.
+	 */
 	Exception unexpected( string token )
 	{
-		return new Exception( "On line " ~ to!string( l.line_number ) ~ ": unexpected " ~ identify_symbol( token ) ~ " '" ~ token ~ "'" );
+		return new Exception( "On line " ~ to!string( l.line_number ) ~ ": unexpected " ~ identify_token( token ) ~ " '" ~ token ~ "'" );
 	}
 }
