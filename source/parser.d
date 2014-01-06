@@ -23,7 +23,7 @@ class parser
 	lexer l;
 
 	/** These give a new value to a variable */
-	immutable string[] assignment_operators = [
+	static immutable string[] assignment_operators = [
 		"=",
 		"+=",
 		"-=",
@@ -35,10 +35,10 @@ class parser
 	];
 	
 	/** These are used when declaring things. */
-	immutable string[] attributes = [
+	static immutable string[] attributes = [
 		"abstract",
 		"const",
-		"immutable",
+		"static immutable",
 		"in",
 		"inout",
 		"lazy",
@@ -53,7 +53,7 @@ class parser
 	];
 
 	/** Compare and contrast, producing booleans. */
-	immutable string[] logical = [
+	static immutable string[] logical = [
 		"and",
 		"equals",
 		"is",
@@ -64,7 +64,7 @@ class parser
 	];
 
 	/** All about combining literals and variables creating expressions. */
-	immutable string[] operators = [
+	static immutable string[] operators = [
 		"+",
 		"-",
 		"*",
@@ -75,7 +75,7 @@ class parser
 	];
 
 	/** These do weird stuff. */
-	immutable string[] punctuation = [
+	static immutable string[] punctuation = [
 		",",
 		".",
 		":",
@@ -90,7 +90,7 @@ class parser
 	];
 
 	/** These do things. */
-	immutable string[] statements = [
+	static immutable string[] statements = [
 		"assert",
 		"break",
 		"catch",
@@ -110,7 +110,7 @@ class parser
 	];
 
 	/** How is stuff stored in memory? */
-	immutable string[] types = [
+	static immutable string[] types = [
 		"auto", "bool", "void", "string",
 		"byte", "short", "int", "long", "cent",
 		"ubyte", "ushort", "uint", "ulong", "ucent",
@@ -121,7 +121,7 @@ class parser
 	];
 
 	/** More complicated types. */
-	immutable string[] user_types = [
+	static immutable string[] user_types = [
 		"alias",
 		"class",
 		"enum",
