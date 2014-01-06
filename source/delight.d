@@ -23,7 +23,7 @@ import parser;
 void main( string args[] )
 {
 	// Check for appropriate arguments
-	if ( args.length < 2 || endsWith( args[1], ".delight" ) )
+	if ( args.length < 2 || !endsWith( args[1], ".delight" ) )
 	{
 		writeln( "Usage: delight [file.delight]" );
 		return;
@@ -35,7 +35,7 @@ void main( string args[] )
 	
 	/// Extract output filename by removing last 6 chars: test.d*elight*
 	string filename = args[1][0 .. $-6];
-	auto w = File( filename ~ "d", "w" );
+	auto w = File( filename, "w" );
 
 	// Write the results to the new file
 	w.write( result );
