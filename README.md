@@ -3,7 +3,7 @@ Delight
 
 Delight is a D programming language preprocessor. The resulting language, called "Delight" has a Python-like syntax, with a touch of Haskell and Ada. The philosophy is like Python's, that there should be one obvious way to do things.
 
-There is an opportunity to discuss language features at (pplantinga.github.io)[http://pplantinga.github.io].
+There is an opportunity to discuss language features at [pplantinga.github.io](http://pplantinga.github.io).
 
 Delightful Features
 -------------------
