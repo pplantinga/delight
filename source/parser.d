@@ -129,9 +129,6 @@ class parser
 		"union"
 	];
 
-	/** Default initializer for unittests and stuff */
-	this() {}
-
 	/** Initialize with a string containing location of source code. */
 	this( string filename )
 	{
@@ -170,7 +167,7 @@ class parser
 	}
 	unittest
 	{
-		parser p = new parser();
+		parser p = new parser( "tests/test1.delight" );
 		assert( p.identify_token( "=" ) == "assignment operator" );
 		assert( p.identify_token( "+=" ) == "assignment operator" );
 		assert( p.identify_token( "%=" ) == "assignment operator" );
@@ -182,8 +179,8 @@ class parser
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
 		assert( p.identify_token( ":" ) == "punctuation" );
-		assert( p.identify_token( "for" ) == "statement" );
-		assert( p.identify_token( "if" ) == "statement" );
+		assert( p.identify_token( "foreach" ) == "statement" );
+		assert( p.identify_token( "try" ) == "statement" );
 		assert( p.identify_token( "char" ) == "type" );
 		assert( p.identify_token( "string" ) == "type" );
 		assert( p.identify_token( "int" ) == "type" );
@@ -213,26 +210,14 @@ class parser
 	}
 	unittest
 	{
-		auto f1 = File( "test1.delight", "w" );
-		f1.write( "import std.stdio\n" );
-		f1.close();
-		parser p1 = new parser( "test1.delight" );
+		parser p1 = new parser( "tests/test1.delight" );
 		assert( p1.parse() == "import std.stdio;\n" );
-		std.file.remove( "test1.delight" );
 
-		auto f2 = File( "test2.delight", "w" );
-		f2.write( "void main():\n\tstring greeting\n" );
-		f2.close();
-		parser p2 = new parser( "test2.delight" );
-		assert( p2.parse() == "void main()\n{\n\tstring greeting;\n}" );
-		std.file.remove( "test2.delight" );
+		parser p2 = new parser( "tests/test2.delight" );
+		assert( p2.parse() == "void main()\n\t{\n\tint x = 5;\n}" );
 
-		auto f3 = File( "test3.delight", "w" );
-		f3.write( "void main():\n\twriteln( \"Hello, world!\" )\n" );
-		f3.close();
-		parser p3 = new parser( "test3.delight" );
-		assert( p3.parse() == "void main()\n{\n\twriteln( \"Hello, world!\" );\n}" );
-		std.file.remove( "test3.delight" );
+		parser p3 = new parser( "tests/test3.delight" );
+		assert( p3.parse() == "import std.stdio;\n\nvoid main()\n\t{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}" );
 	}
 
 	/** The starting state for the parser */

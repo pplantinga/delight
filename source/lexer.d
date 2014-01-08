@@ -46,10 +46,7 @@ class lexer
 	}
 	unittest
 	{
-		auto f1 = File( "test1.delight", "w" );
-		f1.write( "void main():\n\tint x = 5\n" );
-		f1.close();
-		lexer l1 = new lexer( "test1.delight" );
+		lexer l1 = new lexer( "tests/test2.delight" );
 		assert( l1.indentation == "\t" );
 		assert( !l1.is_empty() );
 		assert( l1.pop() == "void" );
@@ -67,25 +64,6 @@ class lexer
 		assert( l1.pop() == "indentation -1" );
 		assert( l1.pop() == "" );
 		assert( l1.is_empty() );
-		std.file.remove( "test1.delight" );
-
-		auto f2 = File( "test2.delight", "w" );
-		f2.write( "void main():\n  double x += 0.2\n" );
-		f2.close();
-		lexer l2 = new lexer( "test2.delight" );
-		assert( l2.indentation == "  " );
-		assert( !l2.is_empty() );
-		l2.pop();
-		l2.pop();
-		l2.pop();
-		l2.pop();
-		l2.pop();
-		l2.pop();
-		assert( l2.pop() == "indentation 1" );
-		assert( l2.pop() == "double" );
-		assert( l2.pop() == "x" );
-		assert( l2.pop() == "+=" );
-		assert( l2.pop() == "0.2" );
 	}
 
 	/**
