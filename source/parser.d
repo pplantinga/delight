@@ -228,7 +228,7 @@ class parser
 		{
 			case "statement":
 				if ( token == "import" )
-					return token ~ " " ~ im_state( l.pop() );
+					return token ~ " " ~ library_state( l.pop() );
 				else
 					throw unexpected( token );
 			case "type":
@@ -246,57 +246,35 @@ class parser
 		}
 	}
 
-	string im_state( string token )
-	{
-		switch ( identify_token( token ) )
-		{
-			case "identifier":
-				return token ~ library_state( l.pop() );
-			default:
-				throw unexpected( token );
-		}
-	};
-
 	string library_state( string token )
 	{
-		switch ( identify_token( token ) )
-		{
-			case "punctuation":
-				if ( token == "." )
-					return token ~ period_state( l.pop() );
-				else
-					throw unexpected( token );
-			case "\n":
-				return ";" ~ endline();
-			default:
-				throw unexpected( token );
-		}
-	}
+		if ( identify_token( token ) != "identifier" )
+			throw unexpected( token );
 
-	string period_state( string token )
-	{
-		switch ( identify_token( token ) )
+		string result = token;
+
+		while ( l.peek() == "." )
 		{
-			case "identifier":
-				return token ~ library_state( l.pop() );
-			default:
+			result ~= l.pop();
+
+			if ( identify_token( l.peek() ) != "identifier" )
 				throw unexpected( token );
+
+			result ~= l.pop();
 		}
+
+		return result ~ endline_state( l.pop() );
 	}
 
 	string declare_state( string token )
 	{
-		switch ( identify_token( token ) )
-		{
-			case "identifier":
-				return token ~ declared_state( l.pop() );
-			default:
-				throw unexpected( token );
-		}
-	}
+		if ( identify_token( token ) != "identifier" )
+			throw unexpected( token );
 
-	string declared_state( string token )
-	{
+		string result = token;
+
+		token = l.pop();
+
 		switch ( identify_token( token ) )
 		{
 			case "punctuation":
@@ -323,9 +301,16 @@ class parser
 				return token ~ function_variable_state( l.pop() );
 			case "punctuation":
 				if ( token == ")" )
-					return token ~ colon_state( l.pop() );
+				{
+					if ( l.peek() == ":" )
+						return ")" ~ l.pop() ~ endline();
+					else
+						throw unexpected( l.peek() );
+				}
 				else
+				{
 					throw unexpected( token );
+				}
 			default:
 				throw unexpected( token );
 		}
@@ -340,14 +325,6 @@ class parser
 			default:
 				throw unexpected( token );
 		}
-	}
-
-	string colon_state( string token )
-	{
-		if ( token == ":" && l.pop() == "\n" )
-			return endline();
-		else
-			throw new Exception( "On line " ~ to!string( l.line_number ) ~ " expected ':\\n'" );
 	}
 
 	string identifier_state( string token )
