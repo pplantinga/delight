@@ -214,25 +214,15 @@ class parser
 		assert( p1.parse() == "import std.stdio;\n" );
 
 		parser p2 = new parser( "tests/test2.delight" );
-		assert( p2.parse() == "void main()\n\t{\n\tint x = 5;\n}" );
+		assert( p2.parse() == "void main()\n\t{\n\tint x = 5;\n}\n" );
 
 		parser p3 = new parser( "tests/test3.delight" );
-		assert( p3.parse() == "import std.stdio;\n\nvoid main()\n\t{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}" );
+		assert( p3.parse() == "import std.stdio;\n\nvoid main()\n\t{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}\n" );
 	}
 
 	/** The starting state for the parser */
 	string start_state( string token )
 	{
-		if ( l.is_empty() )
-		{
-			if ( token == "indentation -1" )
-				return "}";
-			else if ( token == "" )
-				return "";
-			else
-				throw unexpected( token );
-		}
-
 		string indent = join( repeat( l.indentation, l.indentation_level ) );
 		switch ( identify_token( token ) )
 		{
