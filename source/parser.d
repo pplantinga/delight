@@ -214,16 +214,15 @@ class parser
 		assert( p1.parse() == "import std.stdio;\n" );
 
 		parser p2 = new parser( "tests/test2.delight" );
-		assert( p2.parse() == "void main()\n\t{\n\tint x = 5;\n}\n" );
+		assert( p2.parse() == "void main()\n{\n\tint x = 5;\n}\n" );
 
 		parser p3 = new parser( "tests/test3.delight" );
-		assert( p3.parse() == "import std.stdio;\n\nvoid main()\n\t{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}\n" );
+		assert( p3.parse() == "import std.stdio;\n\nvoid main()\n{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}\n" );
 	}
 
 	/** The starting state for the parser */
 	string start_state( string token )
 	{
-		string indent = join( repeat( l.indentation, l.indentation_level ) );
 		switch ( identify_token( token ) )
 		{
 			case "statement":
@@ -234,13 +233,13 @@ class parser
 			case "type":
 				return token ~ " " ~ declare_state( l.pop() );
 			case "\n":
-				return token ~ indent;
+				return endline();
 			case "identifier":
 				return token ~ identifier_state( l.pop() );
 			case "indentation 1":
-				return "{\n" ~ indent;
+				return "{" ~ endline();
 			case "indentation -1":
-				return "}\n" ~ indent;
+				return "}" ~ endline();
 			default:
 				throw unexpected( token );
 		}
@@ -384,7 +383,10 @@ class parser
 	 */
 	string endline()
 	{
-		return "\n" ~ join( repeat( l.indentation, l.indentation_level ) );
+		int level = l.indentation_level;
+		if ( !l.is_empty() && l.peek() == "indentation 1" )
+			level -= 1;
+		return "\n" ~ join( repeat( l.indentation, level ) );
 	}
 
 	/**
