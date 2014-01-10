@@ -279,15 +279,15 @@ class parser
 		{
 			case "punctuation":
 				if ( token == "(" )
-					return token ~ function_declaration_state( l.pop() );
+					return result ~ token ~ function_declaration_state( l.pop() );
 				else if ( token == "," )
-					return token ~ declare_state( l.pop() );
+					return result ~ token ~ declare_state( l.pop() );
 				else
 					throw unexpected( token );
 			case "assignment operator":
-				return " " ~ token ~ " " ~ expression_state( l.pop() );
+				return result ~ " " ~ token ~ " " ~ expression_state( l.pop() );
 			case "\n":
-				return ";" ~ endline();
+				return result ~ ";" ~ endline();
 			default:
 				throw unexpected( token );
 		}
@@ -302,18 +302,19 @@ class parser
 			case "punctuation":
 				if ( token == ")" )
 				{
-					if ( l.peek() == ":" )
-						return ")" ~ l.pop() ~ endline();
-					else
-						throw unexpected( l.peek() );
+					token = l.pop();
+					if ( token == ":" )
+					{
+						token = l.pop();
+						if ( token == "\n" )
+							return ")" ~ endline();
+					}
 				}
-				else
-				{
-					throw unexpected( token );
-				}
+				break;
 			default:
-				throw unexpected( token );
+				break;
 		}
+		throw unexpected( token );
 	}
 
 	string function_variable_state( string token )

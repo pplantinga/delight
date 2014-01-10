@@ -49,7 +49,7 @@ class lexer
 		lexer l1 = new lexer( "tests/test2.delight" );
 		assert( l1.indentation == "\t" );
 		assert( !l1.is_empty() );
-		assert( li.peek() == "void" );
+		assert( l1.peek() == "void" );
 		assert( l1.pop() == "void" );
 		assert( l1.pop() == "main" );
 		assert( l1.pop() == "(" );
