@@ -16,6 +16,7 @@ import std.stdio;
 import std.range;
 import std.array;
 import std.file;
+import std.regex;
 
 class parser
 {
@@ -139,13 +140,19 @@ class parser
 	/** What kind of thing is this token? */
 	string identify_token( string token )
 	{
-		if ( count( [
-					" ",
-					"\n",
-					"indent -1",
-					"indent +1"
-					], token ) )
+		auto space = regex( `^\n|indent [+-]1$` );
+		auto sl = regex( `^".*"$` );
+		auto cl = regex( `^'\\?.'$` );
+		auto nl = regex( `^[0-9]+.?[0-9]*$` );
+
+		if ( !matchFirst( token, space ).empty )
 			return token;
+		else if ( !matchFirst( token, sl ).empty )
+			return "string literal";
+		else if ( !matchFirst( token, cl ).empty )
+			return "character literal";
+		else if ( !matchFirst( token, nl ).empty )
+			return "number literal";
 		else if ( count( assignment_operators, token ) )
 			return "assignment operator";
 		else if ( count( attributes, token ) )
@@ -169,6 +176,14 @@ class parser
 	{
 		writeln( "identify_token test1" );
 		parser p = new parser( "tests/test1.delight" );
+		assert( p.identify_token( "\n" ) == "\n" );
+		assert( p.identify_token( "indent -1" ) == "indent -1" );
+		assert( p.identify_token( "\"\"" ) == "string literal" );
+		assert( p.identify_token( "\"string\"" ) == "string literal" );
+		assert( p.identify_token( "'a'" ) == "character literal" );
+		assert( p.identify_token( "'\\n'" ) == "character literal" );
+		assert( p.identify_token( "5" ) == "number literal" );
+		assert( p.identify_token( "5.2" ) == "number literal" );
 		assert( p.identify_token( "=" ) == "assignment operator" );
 		assert( p.identify_token( "+=" ) == "assignment operator" );
 		assert( p.identify_token( "%=" ) == "assignment operator" );
@@ -355,6 +370,9 @@ class parser
 	{
 		switch ( identify_token( token ) )
 		{
+			case "string literal":
+			case "character literal":
+			case "number literal":
 			case "identifier":
 				return token ~ function_call_state( l.pop() );
 			case "punctuation":
@@ -371,6 +389,9 @@ class parser
 	{
 		switch ( identify_token( token ) )
 		{
+			case "string literal":
+			case "character literal":
+			case "number literal":
 			case "identifier":
 				return token ~ endline_state( l.pop() );
 			default:
