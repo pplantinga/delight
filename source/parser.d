@@ -240,7 +240,7 @@ class parser
 
 		writeln( "Parsing test4" );
 		parser p4 = new parser( "tests/test4.delight" );
-		assert( p4.parse() == "void main()\n{\n\tint ident(int a)\n\t{\n\t\treturn a;\n\t}\n}\n" );
+		assert( p4.parse() == "void main()\n{\n\tint add(int a)\n\t{\n\t\treturn a + (3 - 2);\n\t}\n}\n" );
 	}
 
 	/** The starting state for the parser */
@@ -252,7 +252,7 @@ class parser
 				if ( token == "import" )
 					return token ~ " " ~ library_state( l.pop() );
 				else
-					return token ~ " " ~ expression_state( l.pop() );
+					return token ~ " " ~ expression_state( l.pop() ) ~ ";";
 			case "type":
 				return token ~ " " ~ declare_state( l.pop() );
 			case "\n":
@@ -307,7 +307,7 @@ class parser
 				else
 					throw unexpected( token );
 			case "assignment operator":
-				return result ~ " " ~ token ~ " " ~ expression_state( l.pop() );
+				return result ~ " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
 			case "\n":
 				return result ~ ";" ~ endline();
 			default:
@@ -356,11 +356,11 @@ class parser
 		{
 			case "punctuation":
 				if ( token == "(" )
-					return token ~ function_call_state( l.pop() );
+					return token ~ function_call_state( l.pop() ) ~ ";";
 				else
 					throw unexpected( token );
 			case "assignment operator":
-				return " " ~ token ~ " " ~ expression_state( l.pop() );
+				return " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
 			default:
 				throw unexpected( token );
 		}
@@ -377,7 +377,7 @@ class parser
 				return token ~ function_call_state( l.pop() );
 			case "punctuation":
 				if ( token == ")" )
-					return token ~ endline_state( l.pop() );
+					return token;
 				else
 					throw unexpected( token );
 			default:
@@ -387,15 +387,46 @@ class parser
 
 	string expression_state( string token )
 	{
+		string expression;
 		switch ( identify_token( token ) )
 		{
 			case "string literal":
 			case "character literal":
 			case "number literal":
 			case "identifier":
-				return token ~ endline_state( l.pop() );
+				expression = token;
+				if ( l.peek() == "(" )
+				{
+					l.pop();
+					expression ~= "(" ~ function_call_state( l.pop() );
+				}
+				break;
+			case "punctuation":
+				if ( token == "(" )
+					expression = token ~ expression_state( l.pop() );
+				else
+					throw unexpected( token );
+				break;
 			default:
 				throw unexpected( token );
+		}
+
+		if ( identify_token( l.peek() ) == "operator" )
+		{
+			string op = l.pop();
+			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
+		}
+		else if ( l.peek() == ")" )
+		{
+			return expression ~ l.pop();
+		}
+		else if ( l.peek() == "\n" )
+		{
+			return expression;
+		}
+		else
+		{
+			throw unexpected( token );
 		}
 	}
 
