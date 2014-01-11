@@ -20,7 +20,7 @@ class lexer
 	int line_number;
 	int indentation_level;
 	string indentation;
-	SList!string tokens;
+	DList!string tokens;
 	File f;
 
 	/** Constructor takes a file name containing "delight" source code */
@@ -153,7 +153,7 @@ class lexer
 			auto c = match( current_line, r ).captures;
 			current_line = current_line[c.hit.length .. $];
   		if ( c.hit != " " )
-				tokens.insertAfter( tokens[], c.hit );
+				tokens.insertBack( c.hit );
 		}
 	}
 
