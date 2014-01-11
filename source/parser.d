@@ -142,8 +142,8 @@ class parser
 		if ( count( [
 					" ",
 					"\n",
-					"indentation 1",
-					"indentation -1"
+					"indent -1",
+					"indent +1"
 					], token ) )
 			return token;
 		else if ( count( assignment_operators, token ) )
@@ -167,6 +167,7 @@ class parser
 	}
 	unittest
 	{
+		writeln( "identify_token test1" );
 		parser p = new parser( "tests/test1.delight" );
 		assert( p.identify_token( "=" ) == "assignment operator" );
 		assert( p.identify_token( "+=" ) == "assignment operator" );
@@ -210,14 +211,21 @@ class parser
 	}
 	unittest
 	{
+		writeln( "Parsing test1" );
 		parser p1 = new parser( "tests/test1.delight" );
 		assert( p1.parse() == "import std.stdio;\n" );
 
+		writeln( "Parsing test2" );
 		parser p2 = new parser( "tests/test2.delight" );
 		assert( p2.parse() == "void main()\n{\n\tint x = 5;\n}\n" );
 
+		writeln( "Parsing test3" );
 		parser p3 = new parser( "tests/test3.delight" );
 		assert( p3.parse() == "import std.stdio;\n\nvoid main()\n{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}\n" );
+
+		writeln( "Parsing test4" );
+		parser p4 = new parser( "tests/test4.delight" );
+		assert( p4.parse() == "void main()\n{\n\tint ident(int a)\n\t{\n\t\treturn a;\n\t}\n}\n" );
 	}
 
 	/** The starting state for the parser */
@@ -229,16 +237,16 @@ class parser
 				if ( token == "import" )
 					return token ~ " " ~ library_state( l.pop() );
 				else
-					throw unexpected( token );
+					return token ~ " " ~ expression_state( l.pop() );
 			case "type":
 				return token ~ " " ~ declare_state( l.pop() );
 			case "\n":
 				return endline();
 			case "identifier":
 				return token ~ identifier_state( l.pop() );
-			case "indentation 1":
+			case "indent +1":
 				return "{" ~ endline();
-			case "indentation -1":
+			case "indent -1":
 				return "}" ~ endline();
 			default:
 				throw unexpected( token );
@@ -297,7 +305,7 @@ class parser
 		switch ( identify_token( token ) )
 		{
 			case "type":
-				return token ~ function_variable_state( l.pop() );
+				return token ~ " " ~ function_variable_state( l.pop() );
 			case "punctuation":
 				if ( token == ")" )
 				{
@@ -384,8 +392,12 @@ class parser
 	string endline()
 	{
 		int level = l.indentation_level;
-		if ( !l.is_empty() && l.peek() == "indentation 1" )
+
+		// Since the indentation level doesn't get changed till after
+		// the pop, we'll need to shift the indentation here
+		if ( !l.is_empty() && l.peek() == "indent -1" )
 			level -= 1;
+		
 		return "\n" ~ join( repeat( l.indentation, level ) );
 	}
 

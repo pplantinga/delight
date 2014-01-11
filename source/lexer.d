@@ -46,6 +46,7 @@ class lexer
 	}
 	unittest
 	{
+		writeln( "Lexing test2" );
 		lexer l1 = new lexer( "tests/test2.delight" );
 		assert( l1.indentation == "\t" );
 		assert( !l1.is_empty() );
@@ -56,13 +57,13 @@ class lexer
 		assert( l1.pop() == ")" );
 		assert( l1.pop() == ":" );
 		assert( l1.pop() == "\n" );
-		assert( l1.pop() == "indentation 1" );
+		assert( l1.pop() == "indent +1" );
 		assert( l1.pop() == "int" );
 		assert( l1.pop() == "x" );
 		assert( l1.pop() == "=" );
 		assert( l1.pop() == "5" );
 		assert( l1.pop() == "\n" );
-		assert( l1.pop() == "indentation -1" );
+		assert( l1.pop() == "indent -1" );
 		assert( l1.pop() == "" );
 		assert( l1.is_empty() );
 	}
@@ -82,8 +83,14 @@ class lexer
 		}
 		
 		// If we're empty, tokenize another line
-		if ( tokens.empty() )
+		if ( tokens.empty() && !is_empty() )
 			this.tokenize_line();
+
+		// If this is an indentation token, adjust
+		if ( token == "indent +1" )
+			indentation_level += 1;
+		else if ( token == "indent -1" && indentation_level > 0 )
+			indentation_level -= 1;
 		
 		return token;
 	}
@@ -119,21 +126,16 @@ class lexer
 			}
 		}
 
-		string token;
 
 		// indentation tokens
-		if ( level != indentation_level )
-		{
-			auto amount = level - indentation_level;
-			auto direction = amount / abs( amount );
+		string token;
+		if ( level < indentation_level )
+			token = "indent -1";
+		else if ( level > indentation_level )
+			token = "indent +1";
 
-			// Keep track of which indentation level we're at
-			while ( level != indentation_level )
-			{
-				tokens.insertFront( "indentation " ~ to!string( direction ) );
-				indentation_level += direction;
-			}
-		}
+		for ( int i = 0; i < abs( level - indentation_level ); i++ )
+			tokens.insertFront( token );
 
 		/**
 		 * The almighty token regex. It matches:

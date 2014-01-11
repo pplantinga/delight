@@ -1,0 +1,3 @@
+void main():
+	int ident( int a ):
+		return a
