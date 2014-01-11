@@ -35,7 +35,7 @@ class lexer
 		while ( !indentation && !f.eof() )
 		{
 			current_line = f.readln();
-			auto c = match( current_line, r ).captures;
+			auto c = matchFirst( current_line, r );
 			if ( !c.empty() )
 				indentation = c[1];
 		}
@@ -145,16 +145,12 @@ class lexer
 		 * - [0-9.]+ (number literals)
 		 * - [+%/*^~-]?= (assignment operators)
 		 * - -> (what a function returns)
-		 * - [.,:\[\]()+*~/%\n ^-] (punctuation and operators)
+		 * - [.,:\[\]()+*~/%\n^-] (punctuation and operators)
 		 */
-		auto r = regex( `".*"|'\.'|[A-Za-z_]+|[0-9.]+|[+*/%~^-]?=|->|[.,:\[\]()+*/~%\n ^-]` );
-		while ( current_line != "" )
-		{
-			auto c = match( current_line, r ).captures;
-			current_line = current_line[c.hit.length .. $];
-  		if ( c.hit != " " )
-				tokens.insertBack( c.hit );
-		}
+		auto r = regex( `".*"|'\.'|[A-Za-z_]+|[0-9.]+|[+*/%~^-]?=|->|[.,:\[\]()+*/~%\n^-]` );
+		auto c = matchAll( current_line, r );
+		foreach ( hit; c )
+			tokens.insertBack( hit );
 	}
 
 	/**
