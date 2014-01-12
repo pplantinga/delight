@@ -17,6 +17,7 @@ import std.range;
 import std.array;
 import std.file;
 import std.regex;
+import std.string;
 
 class parser
 {
@@ -152,6 +153,7 @@ class parser
 		auto sl = regex( `^".*"$` );
 		auto cl = regex( `^'\\?.'$` );
 		auto nl = regex( `^[0-9]+.?[0-9]*$` );
+		auto tt = regex( `^[A-Z]$` );
 
 		if ( !matchFirst( token, space ).empty )
 			return token;
@@ -161,6 +163,8 @@ class parser
 			return "character literal";
 		else if ( !matchFirst( token, nl ).empty )
 			return "number literal";
+		else if ( !matchFirst( token, tt ).empty )
+			return "template type";
 		else if ( count( assignment_operators, token ) )
 			return "assignment operator";
 		else if ( count( attributes, token ) )
@@ -194,6 +198,7 @@ class parser
 		assert( p.identify_token( "'\\n'" ) == "character literal" );
 		assert( p.identify_token( "5" ) == "number literal" );
 		assert( p.identify_token( "5.2" ) == "number literal" );
+		assert( p.identify_token( "T" ) == "template type" );
 		assert( p.identify_token( "=" ) == "assignment operator" );
 		assert( p.identify_token( "+=" ) == "assignment operator" );
 		assert( p.identify_token( "%=" ) == "assignment operator" );
@@ -255,7 +260,7 @@ class parser
 
 		writeln( "Parsing test5" );
 		parser p5 = new parser( "tests/test5.delight" );
-		assert( p5.parse() == "pure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(int a, int b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\tint d = subtract(2, 1);\n}\n" );
+		assert( p5.parse() == "pure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(T)(T a, T b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\tint d = subtract(2, 1);\n}\n" );
 	}
 
 	/** The starting state for the parser */
@@ -351,7 +356,7 @@ class parser
 			throw unexpected( l.peek() );
 
 		string name = l.pop();
-		string args, return_type;
+		string args, template_args, return_type;
 
 		if ( l.peek() == "(" )
 		{
@@ -374,8 +379,15 @@ class parser
 			throw unexpected( token );
 
 		string result;
-		while ( identify_token( l.peek() ) == "type" )
+		string template_types;
+
+		while ( identify_token( l.peek() ) == "type"
+				|| identify_token( l.peek() ) == "template type" )
 		{
+			if ( identify_token( l.peek() ) == "template type"
+					&& std.string.indexOf( template_types, l.peek()[0] ) == -1 )
+				template_types ~= l.peek() ~ ", ";
+
 			string type = l.pop();
 			while ( identify_token( l.peek() ) == "identifier" )
 			{
@@ -386,6 +398,9 @@ class parser
 					result ~= type ~ " " ~ var;
 			}
 		}
+
+		if ( template_types )
+			result = chomp( template_types, ", " ) ~ ")(" ~ result;
 
 		return result;
 	}

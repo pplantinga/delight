@@ -1,7 +1,7 @@
 function add(int a, b -> int):
 	return a + b
 
-function subtract(int a, b):
+function subtract(T a, b):
 	return a - b
 
 procedure main:
