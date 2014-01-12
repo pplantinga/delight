@@ -1,2 +1,2 @@
-void main():
+procedure main:
 	int x = 5

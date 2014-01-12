@@ -1,6 +1,6 @@
 import std.stdio
 
-void main():
+procedure main:
 	string greeting = "Hello"
 	greeting ~= ", world!"
 	writeln( greeting )

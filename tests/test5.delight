@@ -1,0 +1,9 @@
+function add(int a, b -> int):
+	return a + b
+
+function subtract(int a, b):
+	return a - b
+
+procedure main:
+	int c = add( 2, 1 )
+	int d = subtract( 2, 1 )

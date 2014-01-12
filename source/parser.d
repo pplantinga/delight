@@ -39,7 +39,7 @@ class parser
 	static immutable string[] attributes = [
 		"abstract",
 		"const",
-		"static immutable",
+		"immutable",
 		"in",
 		"inout",
 		"lazy",
@@ -53,6 +53,13 @@ class parser
 		"synchronized"
 	];
 
+	/** Function types. */
+	static immutable string[] function_types = [
+		"function",
+		"method",
+		"procedure"
+	];
+
 	/** Compare and contrast, producing booleans. */
 	static immutable string[] logical = [
 		"and",
@@ -60,6 +67,7 @@ class parser
 		"is",
 		"less than",
 		"more than",
+		"lambda",
 		"not",
 		"or"
 	];
@@ -157,6 +165,8 @@ class parser
 			return "assignment operator";
 		else if ( count( attributes, token ) )
 			return "attribute";
+		else if ( count( function_types, token ) )
+			return "function type";
 		else if ( count( logical, token ) )
 			return "logical";
 		else if ( count( operators, token ) )
@@ -218,6 +228,7 @@ class parser
 			catch ( Exception e )
 			{
 				writeln( e.msg );
+				debug writeln( e );
 				return result;
 			}
 		}
@@ -240,7 +251,11 @@ class parser
 
 		writeln( "Parsing test4" );
 		parser p4 = new parser( "tests/test4.delight" );
-		assert( p4.parse() == "void main()\n{\n\tint add(int a)\n\t{\n\t\treturn a + (3 - 2);\n\t}\n}\n" );
+		assert( p4.parse() == "void main()\n{\n\tpure int add(int a, int b)\n\t{\n\t\treturn a + b;\n\t}\n}\n" );
+
+		writeln( "Parsing test5" );
+		parser p5 = new parser( "tests/test5.delight" );
+		assert( p5.parse() == "pure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(int a, int b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\tint d = subtract(2, 1);\n}\n" );
 	}
 
 	/** The starting state for the parser */
@@ -255,6 +270,8 @@ class parser
 					return token ~ " " ~ expression_state( l.pop() ) ~ ";";
 			case "type":
 				return token ~ " " ~ declare_state( l.pop() );
+			case "function type":
+				return function_declaration_state( token );
 			case "\n":
 				return endline();
 			case "identifier":
@@ -299,13 +316,6 @@ class parser
 
 		switch ( identify_token( token ) )
 		{
-			case "punctuation":
-				if ( token == "(" )
-					return result ~ token ~ function_declaration_state( l.pop() );
-				else if ( token == "," )
-					return result ~ token ~ declare_state( l.pop() );
-				else
-					throw unexpected( token );
 			case "assignment operator":
 				return result ~ " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
 			case "\n":
@@ -317,37 +327,87 @@ class parser
 
 	string function_declaration_state( string token )
 	{
-		switch ( identify_token( token ) )
+		string start;
+		bool is_function, is_method, is_procedure = false;
+		switch ( token )
 		{
-			case "type":
-				return token ~ " " ~ function_variable_state( l.pop() );
-			case "punctuation":
-				if ( token == ")" )
-				{
-					token = l.pop();
-					if ( token == ":" )
-					{
-						token = l.pop();
-						if ( token == "\n" )
-							return ")" ~ endline();
-					}
-				}
+			case "function":
+				is_function = true;
+				start = "pure ";
 				break;
-			default:
+			case "method":
+				is_method = true;
+				start = "";
 				break;
-		}
-		throw unexpected( token );
-	}
-
-	string function_variable_state( string token )
-	{
-		switch ( identify_token( token ) )
-		{
-			case "identifier":
-				return token ~ function_declaration_state( l.pop() );
+			case "procedure":
+				is_procedure = true;
+				start = "void";
+				break;
 			default:
 				throw unexpected( token );
 		}
+
+		if ( identify_token( l.peek() ) != "identifier" )
+			throw unexpected( l.peek() );
+
+		string name = l.pop();
+		string args, return_type;
+
+		if ( l.peek() == "(" )
+		{
+			args = parse_args( l.pop() );
+			return_type = parse_return_type( l.pop );
+			if ( !return_type && !is_procedure )
+				return_type = "auto";
+		}
+		
+		string colon = l.pop();
+		if ( colon == ":" )
+			return start ~ return_type ~ " " ~ name ~ "(" ~ args ~ ")";
+		else
+			throw unexpected( colon );
+	}
+
+	string parse_args( string token )
+	{
+		if ( token != "(" )
+			throw unexpected( token );
+
+		string result;
+		while ( identify_token( l.peek() ) == "type" )
+		{
+			string type = l.pop();
+			while ( identify_token( l.peek() ) == "identifier" )
+			{
+				string var = l.pop();
+				if ( l.peek() == "," )
+					result ~= type ~ " " ~ var ~ l.pop() ~ " ";
+				else
+					result ~= type ~ " " ~ var;
+			}
+		}
+
+		return result;
+	}
+
+	string parse_return_type( string token )
+	{
+		if ( token == ")" )
+			return "auto";
+		
+		if ( token != "->" )
+			throw unexpected( token );
+
+		if ( identify_token( l.peek() ) != "type" )
+			throw unexpected( l.peek() );
+
+		string type = l.pop();
+		string next = l.pop();
+
+		if ( next != ")" )
+			throw unexpected( next );
+
+		return type;
 	}
 
 	string identifier_state( string token )
@@ -374,12 +434,13 @@ class parser
 			case "character literal":
 			case "number literal":
 			case "identifier":
-				return token ~ function_call_state( l.pop() );
-			case "punctuation":
-				if ( token == ")" )
-					return token;
+				string next = l.pop();
+				if ( next == "," )
+					return token ~ ", " ~ function_call_state( l.pop() );
+				else if ( next == ")" )
+					return token ~ ")";
 				else
-					throw unexpected( token );
+					throw unexpected( next );
 			default:
 				throw unexpected( token );
 		}
