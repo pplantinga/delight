@@ -14,6 +14,7 @@ import std.container;
 import std.conv;
 import std.math;
 import std.file;
+import std.array;
 
 class lexer
 {
@@ -135,17 +136,17 @@ class lexer
 		for ( int i = 0; i < abs( level - indentation_level ); i++ )
 			tokens.insertFront( token );
 
-		/**
-		 * The almighty token regex. It matches:
-		 * - ".*" (string literals)
-		 * - '\.' (character literals)
-		 * - [A-Za-z_]+ (identifiers and keywords)
-		 * - [0-9.]+ (number literals)
-		 * - [+%/*^~-]?= (assignment operators)
-		 * - -> (what a function returns)
-		 * - [.,:\[\]()+*~/%\n^-] (punctuation and operators)
-		 */
-		auto r = regex( `".*"|'\.'|[A-Za-z_]+|[0-9.]+|[+*/%~^-]?=|->|[.,:\[\]()+*/~%\n^-]` );
+		string[] regexes = [
+			`".*"`,                 // string literals
+			`'\\?.'`,               // character literals
+			`[0-9]+\.?[0-9]*`,      // number literals
+			`[A-Za-z_]+`,           // identifiers and keywords
+			`->`,                   // function return
+			`[+*%/~^-]?=`,          // assignment operators
+			`[.,:\[\]()+*~/%\n^-]`  // punctuation and operators
+		];
+		/// The almighty token regex
+		auto r = regex( join( regexes, "|" ) );
 		auto c = matchAll( current_line, r );
 		foreach ( hit; c )
 			tokens.insertBack( hit );
