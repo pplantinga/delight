@@ -245,26 +245,29 @@ class parser
 	unittest
 	{
 		writeln( "Parsing test1" );
-		parser p1 = new parser( "tests/test1.delight" );
-		assert( p1.parse() == "\nimport std.stdio;\n" );
+		parser p = new parser( "tests/test1.delight" );
+		auto result = read( "tests/test1.d" );
+		assert( p.parse() == result );
 
 		writeln( "Parsing test2" );
-		parser p2 = new parser( "tests/test2.delight" );
-		string result = p2.parse();
-		string file = "\n/++\n + test2\n + docblock\n +/\n\nvoid main()\n{\n\t/// inline doc\n\tint x = 5;// inline\n}\n";
-		assert( result == file );
+		p = new parser( "tests/test2.delight" );
+		result = read( "tests/test2.d" );
+		assert( p.parse() == result );
 
 		writeln( "Parsing test3" );
-		parser p3 = new parser( "tests/test3.delight" );
-		assert( p3.parse() == "\nimport std.stdio;\n\nvoid main()\n{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}\n" );
+		p = new parser( "tests/test3.delight" );
+		result = read( "tests/test3.d" );
+		assert( p.parse() == result );
 
 		writeln( "Parsing test4" );
-		parser p4 = new parser( "tests/test4.delight" );
-		assert( p4.parse() == "\nvoid main()\n{\n\tpure int add(int a, int b)\n\t{\n\t\treturn a + b;\n\t}\n}\n" );
+		p = new parser( "tests/test4.delight" );
+		result = read( "tests/test4.d" );
+		assert( p.parse() == result );
 
 		writeln( "Parsing test5" );
-		parser p5 = new parser( "tests/test5.delight" );
-		assert( p5.parse() == "\npure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(T)(T a, T b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\t\n\tint d = subtract(2, 1);\n}\n" );
+		p = new parser( "tests/test5.delight" );
+		result = read( "tests/test5.d" );
+		assert( p.parse() == result );
 	}
 
 	/** The starting state for the parser */
