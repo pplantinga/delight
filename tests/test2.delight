@@ -1,2 +1,6 @@
+#. test2
+	docblock
+
 procedure main:
-	int x = 5
+	#. inline doc
+	int x = 5 # inline

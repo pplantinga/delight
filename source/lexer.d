@@ -18,8 +18,10 @@ import std.array;
 
 class lexer
 {
+	static immutable MAX_INDENT = 10000;
 	int line_number;
 	int indentation_level;
+	int block_comment_level = MAX_INDENT;
 	string indentation;
 	DList!string tokens;
 	File f;
@@ -43,25 +45,43 @@ class lexer
 
 		// Go back to the beginning of the file
 		f.rewind();
+
+		// Add a newline as a beginning of input symbol
+		tokens.insertFront( "\n" );
 		this.tokenize_line();
 	}
 	unittest
 	{
-		writeln( "Lexing test2" );
-		lexer l1 = new lexer( "tests/test2.delight" );
+		writeln( "Lexing test4" );
+		lexer l1 = new lexer( "tests/test4.delight" );
 		assert( l1.indentation == "\t" );
 		assert( !l1.is_empty() );
+		assert( l1.pop() == "\n" );
 		assert( l1.peek() == "procedure" );
 		assert( l1.pop() == "procedure" );
 		assert( l1.pop() == "main" );
 		assert( l1.pop() == ":" );
 		assert( l1.pop() == "\n" );
 		assert( l1.pop() == "indent +1" );
+		assert( l1.pop() == "function" );
+		assert( l1.pop() == "add" );
+		assert( l1.pop() == "(" );
 		assert( l1.pop() == "int" );
-		assert( l1.pop() == "x" );
-		assert( l1.pop() == "=" );
-		assert( l1.pop() == "5" );
+		assert( l1.pop() == "a" );
+		assert( l1.pop() == "," );
+		assert( l1.pop() == "b" );
+		assert( l1.pop() == "->" );
+		assert( l1.pop() == "int" );
+		assert( l1.pop() == ")" );
+		assert( l1.pop() == ":" );
 		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "indent +1" );
+		assert( l1.pop() == "return" );
+		assert( l1.pop() == "a" );
+		assert( l1.pop() == "+" );
+		assert( l1.pop() == "b" );
+		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "indent -1" );
 		assert( l1.pop() == "indent -1" );
 		assert( l1.pop() == "" );
 		assert( l1.is_empty() );
@@ -142,10 +162,40 @@ class lexer
 		for ( int i = 0; i < abs( level - indentation_level ); i++ )
 			tokens.insertFront( token );
 
+		// Check for block comments
+		if ( current_line && current_line[0] == '#' )
+		{
+			// Set the level we can't go past
+			block_comment_level = level;
+
+			// First line is indented one less than the rest
+			level += 1;
+		}
+
+		// If we're in a block comment
+		if ( level > block_comment_level )
+		{
+			// Add the newline tokens
+			foreach ( count; 0 .. newlines.length )
+				tokens.insertBack( "\n" );
+
+			// Parse the comment
+			parse_comment( tokens, current_line );
+			
+			// That's all folks
+			return;
+		}
+		else
+		{
+			// Don't allow re-entry into block comment
+			block_comment_level = MAX_INDENT;
+		}
+
 		// Add the newlines back in
 		current_line = newlines ~ current_line;
 
 		string[] regexes = [
+			`#.*\n`,                // inline comments
 			`".*"`,                 // string literals
 			`'\\?.'`,               // character literals
 			`[0-9]+\.?[0-9]*`,      // number literals
@@ -158,8 +208,33 @@ class lexer
 		auto r = regex( join( regexes, "|" ) );
 		auto c = matchAll( current_line, r );
 		foreach ( hit; c )
-			tokens.insertBack( hit );
+		{
+			if ( hit[0][0] == '#' )
+				parse_comment( tokens, hit[0] );
+			else
+				tokens.insertBack( hit );
+		}
 	}
+
+	void parse_comment( ref DList!string tokens, string comment )
+	{
+		if ( comment[0] == '#' )
+		{
+			string token = "#";
+			if ( comment[1] == '.' )
+				token = "#.";
+
+			tokens.insertBack( token );
+			tokens.insertBack( comment[token.length .. $-1] );
+		}
+		else
+		{
+			tokens.insertBack( comment[0 .. $-1] );
+		}
+		
+		tokens.insertBack( "\n" );
+	}
+
 
 	/**
 	 * Are we out of tokens?

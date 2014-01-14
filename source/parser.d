@@ -96,6 +96,7 @@ class parser
 		"\"",
 		"'",
 		"#",
+		"#.",
 		"->"
 	];
 
@@ -245,23 +246,25 @@ class parser
 	{
 		writeln( "Parsing test1" );
 		parser p1 = new parser( "tests/test1.delight" );
-		assert( p1.parse() == "import std.stdio;\n" );
+		assert( p1.parse() == "\nimport std.stdio;\n" );
 
 		writeln( "Parsing test2" );
 		parser p2 = new parser( "tests/test2.delight" );
-		assert( p2.parse() == "void main()\n{\n\tint x = 5;\n}\n" );
+		string result = p2.parse();
+		string file = "\n/++\n + test2\n + docblock\n +/\n\nvoid main()\n{\n\t/// inline doc\n\tint x = 5;// inline\n}\n";
+		assert( result == file );
 
 		writeln( "Parsing test3" );
 		parser p3 = new parser( "tests/test3.delight" );
-		assert( p3.parse() == "import std.stdio;\n\nvoid main()\n{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}\n" );
+		assert( p3.parse() == "\nimport std.stdio;\n\nvoid main()\n{\n\tstring greeting = \"Hello\";\n\tgreeting ~= \", world!\";\n\twriteln(greeting);\n}\n" );
 
 		writeln( "Parsing test4" );
 		parser p4 = new parser( "tests/test4.delight" );
-		assert( p4.parse() == "void main()\n{\n\tpure int add(int a, int b)\n\t{\n\t\treturn a + b;\n\t}\n}\n" );
+		assert( p4.parse() == "\nvoid main()\n{\n\tpure int add(int a, int b)\n\t{\n\t\treturn a + b;\n\t}\n}\n" );
 
 		writeln( "Parsing test5" );
 		parser p5 = new parser( "tests/test5.delight" );
-		assert( p5.parse() == "pure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(T)(T a, T b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\t\n\tint d = subtract(2, 1);\n}\n" );
+		assert( p5.parse() == "\npure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(T)(T a, T b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\t\n\tint d = subtract(2, 1);\n}\n" );
 	}
 
 	/** The starting state for the parser */
@@ -279,13 +282,22 @@ class parser
 			case "function type":
 				return function_declaration_state( token );
 			case "\n":
-				return endline();
+				string endline = endline();
+				if ( l.peek() == "#" || l.peek() == "#." )
+					return endline ~ block_comment_state( l.pop() );
+				else
+					return endline;
 			case "identifier":
 				return token ~ identifier_state( l.pop() );
 			case "indent +1":
 				return "{" ~ endline();
 			case "indent -1":
 				return "}" ~ endline();
+			case "punctuation":
+				if ( token == "#" || token == "#." )
+					return inline_comment_state( token );
+				else
+					throw unexpected( token );
 			default:
 				throw unexpected( token );
 		}
@@ -519,17 +531,17 @@ class parser
 			string op = l.pop();
 			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
 		}
-		else if ( l.peek() == ")" )
+
+		switch ( l.peek() )
 		{
-			return expression ~ l.pop();
-		}
-		else if ( l.peek() == "\n" )
-		{
-			return expression;
-		}
-		else
-		{
-			throw unexpected( token );
+			case ")":
+				return expression ~ l.pop();
+			case "\n":
+			case "#":
+			case "#.":
+				return expression;
+			default:
+				throw unexpected( l.peek() );
 		}
 	}
 
@@ -540,6 +552,65 @@ class parser
 			return ";" ~ endline();
 		else
 			throw unexpected( token );
+	}
+
+	/** Block comments eat the rest of the input until it un-indents */
+	string block_comment_state( string token )
+	{
+		string indent = join( repeat( l.indentation, l.block_comment_level ) );
+		
+		// Do the whole first line at once
+		string line = l.pop();
+		string newline = l.pop();
+		string result = endline() ~ " +" ~ line ~ newline ~ indent ~ " +";
+		if ( token == "#" )
+			result = "/+" ~ result;
+		else if ( token == "#." )
+			result = "/++" ~ result;
+
+		if ( l.peek() == "indent +1" )
+		{
+			l.pop();
+			string inside;
+			int level = 1;
+			while ( level > 0 )
+			{
+				/// Indentation inside the block
+				/// Use 2 spaces cuz we're inside the comment, tabs can mess up
+				inside = join( repeat( "  ", level - 1 ) );
+				
+				token = l.pop();
+				if ( token == "\n" )
+					result ~= "\n" ~ indent ~ " +";
+				else if ( token == "indent +1" )
+					level += 1;
+				else if ( token == "indent -1" )
+					level -= 1;
+				else
+					result ~= " " ~ inside ~ token;
+			}
+		}
+
+		return result ~= "/" ~ endline();
+	}
+
+	/** Inline comments just eat the rest of the line */
+	string inline_comment_state( string token )
+	{
+		string result;
+		if ( token == "#" )
+			result = "//";
+		else if ( token == "#." )
+			result = "///";
+		else
+			throw unexpected( token );
+
+		result ~= l.pop();
+		string newline = l.pop();
+		if ( newline == "\n" )
+			return result ~ endline();
+		else
+			throw unexpected( newline );
 	}
 
 	/** New line, plus indentation */
