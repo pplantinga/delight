@@ -261,7 +261,7 @@ class parser
 
 		writeln( "Parsing test5" );
 		parser p5 = new parser( "tests/test5.delight" );
-		assert( p5.parse() == "pure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(T)(T a, T b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\tint d = subtract(2, 1);\n}\n" );
+		assert( p5.parse() == "pure int add(int a, int b)\n{\n\treturn a + b;\n}\n\npure auto subtract(T)(T a, T b)\n{\n\treturn a - b;\n}\n\nvoid main()\n{\n\tint c = add(2, 1);\n\t\n\tint d = subtract(2, 1);\n}\n" );
 	}
 
 	/** The starting state for the parser */

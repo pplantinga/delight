@@ -108,6 +108,12 @@ class lexer
 	void tokenize_line()
 	{
 		string current_line = f.readln();
+		string newlines;
+		while ( current_line == "\n" )
+		{
+			newlines ~= "\n";
+			current_line = f.readln();
+		}
 
 		// Keep track of which line we're at (for errors and such).
 		line_number += 1;
@@ -135,6 +141,9 @@ class lexer
 
 		for ( int i = 0; i < abs( level - indentation_level ); i++ )
 			tokens.insertFront( token );
+
+		// Add the newlines back in
+		current_line = newlines ~ current_line;
 
 		string[] regexes = [
 			`".*"`,                 // string literals
