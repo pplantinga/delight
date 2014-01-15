@@ -23,6 +23,7 @@ class parser
 {
 	/** Breaks source code into tokens */
 	lexer l;
+	string context = "start";
 
 	/** These give a new value to a variable */
 	static immutable string[] assignment_operators = [
@@ -52,6 +53,12 @@ class parser
 		"shared",
 		"static",
 		"synchronized"
+	];
+
+	/** Statements used for branching */
+	static immutable string[] conditionals = [
+		"if",
+		"else"
 	];
 
 	/** Function types. */
@@ -170,6 +177,8 @@ class parser
 			return "assignment operator";
 		else if ( count( attributes, token ) )
 			return "attribute";
+		else if ( count( conditionals, token ) )
+			return "conditional";
 		else if ( count( function_types, token ) )
 			return "function type";
 		else if ( count( logical, token ) )
@@ -205,6 +214,8 @@ class parser
 		assert( p.identify_token( "%=" ) == "assignment operator" );
 		assert( p.identify_token( "~=" ) == "assignment operator" );
 		assert( p.identify_token( "pure" ) == "attribute" );
+		assert( p.identify_token( "if" ) == "conditional" );
+		assert( p.identify_token( "else" ) == "conditional" );
 		assert( p.identify_token( "and" ) == "logical" );
 		assert( p.identify_token( "less than" ) == "logical" );
 		assert( p.identify_token( "-" ) == "operator" );
@@ -268,6 +279,11 @@ class parser
 		p = new parser( "tests/functions.delight" );
 		result = read( "tests/functions.d" );
 		assert( p.parse() == result );
+
+		writeln( "Parsing conditionals test" );
+		p = new parser( "tests/conditionals.delight" );
+		result = read( "tests/conditionals.d" );
+		assert( p.parse() == result );
 	}
 
 	/** The starting state for the parser */
@@ -281,6 +297,8 @@ class parser
 					return token ~ " " ~ library_state( l.pop() );
 				else
 					return token ~ " " ~ expression_state( l.pop() ) ~ ";";
+			case "conditional":
+				return conditional_state( token );
 			case "type":
 				return token ~ " " ~ declare_state( l.pop() );
 			case "function type":
@@ -339,6 +357,41 @@ class parser
 		}
 
 		return result ~ endline_state( l.pop() );
+	}
+
+	/** Control branching */
+	string conditional_state( string token )
+	{
+		string next = l.pop();
+
+		// Check for correct context
+		if ( token == "if" && context == "start" )
+			context = "if";
+		else if ( token != "if" && context == "start" )
+			throw new Exception( unexpected( token ) );
+
+		// if, else if, else behavior
+		string condition;
+		if ( token == "if" )
+			condition = "if (" ~ expression_state( next ) ~ ")";
+		else if ( token == "else" && next == "if" )
+			condition = "else if (" ~ expression_state( l.pop() ) ~ ")";
+		else if ( token == "else" )
+			condition = token;
+		else
+			throw new Exception( unexpected( token ) );
+		
+		// Check for colon after conditional
+		string colon;
+		if ( token == "else" && next != "if" )
+			colon = next;
+		else
+			colon = l.pop();
+
+		if ( colon != ":" )
+			throw new Exception( unexpected( colon ) );
+
+		return condition;
 	}
 
 	/** This state takes care of variable declaration */
@@ -543,9 +596,24 @@ class parser
 				throw new Exception( unexpected( token ) );
 		}
 
-		if ( identify_token( l.peek() ) == "operator" )
+		/** Contains conversions to D operators */
+		string[string] conversion = [
+			"and": "&&",
+			"or": "||",
+			"equals": "==",
+			"less than": "<",
+			"more than": ">",
+			"^": "^^"
+		];
+
+		if ( identify_token( l.peek() ) == "operator"
+				|| identify_token( l.peek() ) == "logical" )
 		{
+			// Convert operator into D format
 			string op = l.pop();
+			if ( op in conversion )
+				op = conversion[op];
+
 			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
 		}
 
@@ -556,6 +624,7 @@ class parser
 			case "\n":
 			case "#":
 			case "#.":
+			case ":":
 				return expression;
 			default:
 				throw new Exception( unexpected( l.peek() ) );

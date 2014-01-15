@@ -227,6 +227,8 @@ class lexer
 			`".*"`,                 // string literals
 			`'\\?.'`,               // character literals
 			`[0-9]+\.?[0-9]*`,      // number literals
+			`less than`,            // two-word tokens
+			`more than`,
 			`[A-Za-z_]+`,           // identifiers and keywords
 			`->`,                   // function return
 			`[+*%/~^-]?=`,          // assignment operators

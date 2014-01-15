@@ -1,0 +1,14 @@
+procedure main:
+	int x = 1
+	int y = 2
+	int z = 4
+
+	if x less than y and x more than z - y:
+		x = y + z
+
+	else if x equals y + z or x + 2 equals z:
+		y = z
+
+		z = x
+	else:
+		z = x + y
