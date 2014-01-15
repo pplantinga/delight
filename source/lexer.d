@@ -56,7 +56,7 @@ class lexer
 		lexer l1 = new lexer( "tests/indent.delight" );
 		assert( l1.indentation == "\t" );
 		assert( !l1.is_empty() );
-		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "begin" );
 		assert( l1.peek() == "procedure" );
 		assert( l1.pop() == "procedure" );
 		assert( l1.pop() == "main" );
