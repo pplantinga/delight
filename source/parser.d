@@ -55,6 +55,15 @@ class parser
 		"synchronized"
 	];
 
+	/** Compare and contrast, producing booleans. */
+	static immutable string[] comparators = [
+		"equal to",
+		"is",
+		"less than",
+		"more than",
+		"not"
+	];
+
 	/** Statements used for branching */
 	static immutable string[] conditionals = [
 		"if",
@@ -68,14 +77,9 @@ class parser
 		"procedure"
 	];
 
-	/** Compare and contrast, producing booleans. */
+	/** join comparisons */
 	static immutable string[] logical = [
 		"and",
-		"equal to",
-		"is",
-		"less than",
-		"more than",
-		"not",
 		"or"
 	];
 
@@ -176,6 +180,8 @@ class parser
 			return "assignment operator";
 		else if ( count( attributes, token ) )
 			return "attribute";
+		else if ( count( comparators, token ) )
+			return "comparator";
 		else if ( count( conditionals, token ) )
 			return "conditional";
 		else if ( count( function_types, token ) )
@@ -605,13 +611,31 @@ class parser
 			"^": "^^"
 		];
 
+		string[string] negate_op = [
+			"not equal to": "!=",
+			"not less than": ">=",
+			"not more than": "<=",
+			"not is": "!is"
+		];
+
 		if ( identify_token( l.peek() ) == "operator"
+				|| identify_token( l.peek() ) == "comparator"
 				|| identify_token( l.peek() ) == "logical" )
 		{
 			// Convert operator into D format
 			string op = l.pop();
 			if ( op in conversion )
 				op = conversion[op];
+
+			// Not combines with the next token
+			if ( op == "not" )
+			{
+				string next = l.pop();
+				if ( identify_token( next ) == "comparator" && next != "not" )
+					op = negate_op["not " ~ next];
+				else
+					throw new Exception( unexpected( next ) );
+			}
 
 			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
 		}

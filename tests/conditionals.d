@@ -4,12 +4,12 @@ void main()
 	int y = 2;
 	int z = 4;
 	
-	if (x < y && x > z - y)
+	if (x >= y && x > z - y)
 	{
 		x = y + z;
 	}
 	
-	else if (x == y + z || x + 2 == z)
+	else if (x == y + z || x + 2 != z)
 	{
 		y = z;
 		
