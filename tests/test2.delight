@@ -1,6 +1,0 @@
-#. test2
-	docblock
-
-procedure main:
-	#. inline doc
-	int x = 5 # inline

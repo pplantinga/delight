@@ -1,0 +1,9 @@
+procedure main:
+	function add( int a, b -> int ):
+		int c = a + b
+
+		return c
+	
+	int c = add( 1, 2 )
+
+	int d = add( c, 2 )

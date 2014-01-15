@@ -189,8 +189,8 @@ class parser
 	}
 	unittest
 	{
-		writeln( "identify_token test1" );
-		parser p = new parser( "tests/test1.delight" );
+		writeln( "identify_token import" );
+		parser p = new parser( "tests/import.delight" );
 		assert( p.identify_token( "\n" ) == "\n" );
 		assert( p.identify_token( "indent -1" ) == "indent -1" );
 		assert( p.identify_token( "\"\"" ) == "string literal" );
@@ -244,29 +244,29 @@ class parser
 	}
 	unittest
 	{
-		writeln( "Parsing test1" );
-		parser p = new parser( "tests/test1.delight" );
-		auto result = read( "tests/test1.d" );
+		writeln( "Parsing import test" );
+		parser p = new parser( "tests/import.delight" );
+		auto result = read( "tests/import.d" );
 		assert( p.parse() == result );
 
-		writeln( "Parsing test2" );
-		p = new parser( "tests/test2.delight" );
-		result = read( "tests/test2.d" );
+		writeln( "Parsing comments test" );
+		p = new parser( "tests/comments.delight" );
+		result = read( "tests/comments.d" );
 		assert( p.parse() == result );
 
-		writeln( "Parsing test3" );
-		p = new parser( "tests/test3.delight" );
-		result = read( "tests/test3.d" );
+		writeln( "Parsing assignment test" );
+		p = new parser( "tests/assignment.delight" );
+		result = read( "tests/assignment.d" );
 		assert( p.parse() == result );
 
-		writeln( "Parsing test4" );
-		p = new parser( "tests/test4.delight" );
-		result = read( "tests/test4.d" );
+		writeln( "Parsing indent test" );
+		p = new parser( "tests/indent.delight" );
+		result = read( "tests/indent.d" );
 		assert( p.parse() == result );
 
-		writeln( "Parsing test5" );
-		p = new parser( "tests/test5.delight" );
-		result = read( "tests/test5.d" );
+		writeln( "Parsing functions test" );
+		p = new parser( "tests/functions.delight" );
+		result = read( "tests/functions.d" );
 		assert( p.parse() == result );
 	}
 

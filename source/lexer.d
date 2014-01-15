@@ -52,8 +52,8 @@ class lexer
 	}
 	unittest
 	{
-		writeln( "Lexing test4" );
-		lexer l1 = new lexer( "tests/test4.delight" );
+		writeln( "Lexing indent test" );
+		lexer l1 = new lexer( "tests/indent.delight" );
 		assert( l1.indentation == "\t" );
 		assert( !l1.is_empty() );
 		assert( l1.pop() == "\n" );
@@ -76,12 +76,40 @@ class lexer
 		assert( l1.pop() == ":" );
 		assert( l1.pop() == "\n" );
 		assert( l1.pop() == "indent +1" );
-		assert( l1.pop() == "return" );
+		assert( l1.pop() == "int" );
+		assert( l1.pop() == "c" );
+		assert( l1.pop() == "=" );
 		assert( l1.pop() == "a" );
 		assert( l1.pop() == "+" );
 		assert( l1.pop() == "b" );
 		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "return" );
+		assert( l1.pop() == "c" );
+		assert( l1.pop() == "\n" );
 		assert( l1.pop() == "indent -1" );
+		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "int" );
+		assert( l1.pop() == "c" );
+		assert( l1.pop() == "=" );
+		assert( l1.pop() == "add" );
+		assert( l1.pop() == "(" );
+		assert( l1.pop() == "1" );
+		assert( l1.pop() == "," );
+		assert( l1.pop() == "2" );
+		assert( l1.pop() == ")" );
+		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "\n" );
+		assert( l1.pop() == "int" );
+		assert( l1.pop() == "d" );
+		assert( l1.pop() == "=" );
+		assert( l1.pop() == "add" );
+		assert( l1.pop() == "(" );
+		assert( l1.pop() == "c" );
+		assert( l1.pop() == "," );
+		assert( l1.pop() == "2" );
+		assert( l1.pop() == ")" );
+		assert( l1.pop() == "\n" );
 		assert( l1.pop() == "indent -1" );
 		assert( l1.pop() == "" );
 		assert( l1.is_empty() );
