@@ -15,6 +15,10 @@ void main()
 		
 		z = x;
 	}
+	else if (!z)
+	{
+		y = 3;
+	}
 	else
 	{
 		z = x + y;

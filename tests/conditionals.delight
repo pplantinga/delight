@@ -10,5 +10,7 @@ procedure main:
 		y = z
 
 		z = x
+	else if not z:
+		y = 3
 	else:
 		z = x + y

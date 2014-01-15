@@ -222,7 +222,7 @@ class parser
 		assert( p.identify_token( "if" ) == "conditional" );
 		assert( p.identify_token( "else" ) == "conditional" );
 		assert( p.identify_token( "and" ) == "logical" );
-		assert( p.identify_token( "less than" ) == "logical" );
+		assert( p.identify_token( "less than" ) == "comparator" );
 		assert( p.identify_token( "-" ) == "operator" );
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
@@ -597,6 +597,14 @@ class parser
 				else
 					throw new Exception( unexpected( token ) );
 				break;
+			case "comparator":
+				if ( token == "not" )
+				{
+					expression = "!" ~ expression_state( l.pop() );
+					break;
+				}
+				else
+					throw new Exception( unexpected( token ) );
 			default:
 				throw new Exception( unexpected( token ) );
 		}
