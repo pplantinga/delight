@@ -1,4 +1,3 @@
-
 /++
  + docblock
  + author: Peter Plantinga
@@ -14,6 +13,9 @@
 
 void main()
 {
-	/// inline doc
+	/++
+	 + indented docblock
+	 +/
 	int x = 5;// inline
+	int y = 6;/// inline doc
 }

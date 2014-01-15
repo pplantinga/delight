@@ -46,8 +46,8 @@ class lexer
 		// Go back to the beginning of the file
 		f.rewind();
 
-		// Add a newline as a beginning of input symbol
-		tokens.insertFront( "\n" );
+		// Add a beginning of input symbol
+		tokens.insertFront( "begin" );
 		this.tokenize_line();
 	}
 	unittest

@@ -150,7 +150,7 @@ class parser
 	/** What kind of thing is this token? */
 	string identify_token( string token )
 	{
-		auto space = regex( `^\n|indent [+-]1$` );
+		auto space = regex( `^\n|indent [+-]1|begin$` );
 		auto sl = regex( `^".*"$` );
 		auto cl = regex( `^'\\?.'$` );
 		auto nl = regex( `^[0-9]+.?[0-9]*$` );
@@ -273,6 +273,7 @@ class parser
 	/** The starting state for the parser */
 	string start_state( string token )
 	{
+		string endline = endline();
 		switch ( identify_token( token ) )
 		{
 			case "statement":
@@ -284,23 +285,36 @@ class parser
 				return token ~ " " ~ declare_state( l.pop() );
 			case "function type":
 				return function_declaration_state( token );
-			case "\n":
-				string endline = endline();
-				if ( l.peek() == "#" || l.peek() == "#." )
-					return endline ~ block_comment_state( l.pop() );
-				else
-					return endline;
 			case "identifier":
 				return token ~ identifier_state( l.pop() );
-			case "indent +1":
-				return "{" ~ endline();
-			case "indent -1":
-				return "}" ~ endline();
 			case "punctuation":
 				if ( token == "#" || token == "#." )
 					return inline_comment_state( token );
 				else
 					throw new Exception( unexpected( token ) );
+			
+			// Newline states
+			case "begin":
+			case "\n":
+			case "indent +1":
+			case "indent -1":
+				// Don't use a newline if token is 'begin'
+				if ( token == "begin" )
+					endline = "";
+
+				// Don't use a bracket if token is 'begin' or 'newline' 
+				string bracket = "";
+				if ( token == "indent +1" )
+					bracket = "{";
+				else if ( token == "indent -1" )
+					bracket = "}";
+
+				// Check if there's a block comment coming up
+				if ( !l.is_empty() && ( l.peek() == "#" || l.peek() == "#." ) )
+					return bracket ~ endline ~ block_comment_state( l.pop() );
+				else
+					return bracket ~ endline;
+
 			default:
 				throw new Exception( unexpected( token ) );
 		}

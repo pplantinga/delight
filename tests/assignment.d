@@ -1,4 +1,3 @@
-
 void main()
 {
 	string greeting = "Hello";
