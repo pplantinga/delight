@@ -229,6 +229,7 @@ class lexer
 			`[0-9]+\.?[0-9]*`,      // number literals
 			`less than`,            // two-word tokens
 			`more than`,
+			`equal to`,
 			`[A-Za-z_]+`,           // identifiers and keywords
 			`->`,                   // function return
 			`[+*%/~^-]?=`,          // assignment operators

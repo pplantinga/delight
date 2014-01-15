@@ -6,7 +6,7 @@ procedure main:
 	if x less than y and x more than z - y:
 		x = y + z
 
-	else if x equals y + z or x + 2 equals z:
+	else if x equal to y + z or x + 2 equal to z:
 		y = z
 
 		z = x

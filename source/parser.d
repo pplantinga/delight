@@ -71,11 +71,10 @@ class parser
 	/** Compare and contrast, producing booleans. */
 	static immutable string[] logical = [
 		"and",
-		"equals",
+		"equal to",
 		"is",
 		"less than",
 		"more than",
-		"lambda",
 		"not",
 		"or"
 	];
@@ -600,7 +599,7 @@ class parser
 		string[string] conversion = [
 			"and": "&&",
 			"or": "||",
-			"equals": "==",
+			"equal to": "==",
 			"less than": "<",
 			"more than": ">",
 			"^": "^^"
