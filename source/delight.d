@@ -14,10 +14,8 @@
  * ----------------
  * to create an executable.
  */
-import std.stdio;
-import std.algorithm;
-import std.conv;
-import lexer;
+import std.stdio : writeln, File;
+import std.algorithm : endsWith;
 import parser;
 
 void main( string args[] )

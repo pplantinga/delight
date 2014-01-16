@@ -8,13 +8,10 @@
  * - reads the file line by line
  * - produces tokens, such as "asdf" "1.2" "+" "foreach" etc.
  */
-import std.stdio;
+import std.stdio : writeln, File;
 import std.regex;
-import std.container;
-import std.conv;
-import std.math;
-import std.file;
-import std.array;
+import std.container : DList;
+import std.array : join;
 
 class lexer
 {
@@ -182,12 +179,19 @@ class lexer
 
 		// indentation tokens
 		string token;
+		int end;
 		if ( level < indentation_level )
+		{
 			token = "indent -1";
+			end = indentation_level - level;
+		}
 		else if ( level > indentation_level )
+		{
 			token = "indent +1";
+			end = level - indentation_level;
+		}
 
-		for ( int i = 0; i < abs( level - indentation_level ); i++ )
+		for ( int i = 0; i < end; i++ )
 			tokens.insertFront( token );
 
 		// Check for block comments

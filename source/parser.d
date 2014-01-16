@@ -10,12 +10,9 @@
  * - generates valid d code
  */
 import lexer;
-import std.algorithm;
-import std.conv;
-import std.stdio;
-import std.range;
-import std.array;
-import std.file;
+import std.conv : to;
+import std.stdio : writeln;
+import std.range : repeat;
 import std.regex;
 import std.string;
 
