@@ -15,6 +15,7 @@ import std.stdio : writeln;
 import std.range : repeat;
 import std.regex;
 import std.string;
+import std.algorithm : canFind;
 
 class parser
 {
@@ -157,46 +158,38 @@ class parser
 	/** What kind of thing is this token? */
 	string identify_token( string token )
 	{
-		auto space = regex( `^\n|indent [+-]1|begin$` );
-		auto sl = regex( `^".*"$` );
-		auto cl = regex( `^'\\?.'$` );
-		auto nl = regex( `^[0-9]+.?[0-9]*$` );
-		auto tt = regex( `^[A-Z]$` );
-
-		if ( !matchFirst( token, space ).empty )
+		if ( !matchFirst( token, `^\n|indent [+-]1|begin$` ).empty )
 			return token;
-		else if ( !matchFirst( token, sl ).empty )
+		else if ( !matchFirst( token, `^".*"$` ).empty )
 			return "string literal";
-		else if ( !matchFirst( token, cl ).empty )
+		else if ( !matchFirst( token, `^'\\?.'$` ).empty )
 			return "character literal";
-		else if ( !matchFirst( token, nl ).empty )
+		else if ( !matchFirst( token, `^[0-9]+.?[0-9]*$` ).empty )
 			return "number literal";
-		else if ( !matchFirst( token, tt ).empty )
+		else if ( !matchFirst( token, `^[A-Z]$` ).empty )
 			return "template type";
-		else if ( count( assignment_operators, token ) )
-			return "assignment operator";
-		else if ( count( attributes, token ) )
-			return "attribute";
-		else if ( count( comparators, token ) )
-			return "comparator";
-		else if ( count( conditionals, token ) )
-			return "conditional";
-		else if ( count( function_types, token ) )
-			return "function type";
-		else if ( count( logical, token ) )
-			return "logical";
-		else if ( count( operators, token ) )
-			return "operator";
-		else if ( count( punctuation, token ) )
-			return "punctuation";
-		else if ( count( statements, token ) )
-			return "statement";
-		else if ( count( types, token ) )
-			return "type";
-		else if ( count( user_types, token ) )
-			return "user type";
-		else
-			return "identifier";
+
+		/// Unfortunately, associative array literals
+		/// can only happen inside a function in D
+		auto symbols = [
+			"assignment operator" : assignment_operators,
+			"attribute" : attributes,
+			"comparator" : comparators,
+			"conditional" : conditionals,
+			"function type" : function_types,
+			"logical" : logical,
+			"operator" : operators,
+			"punctuation" : punctuation,
+			"statement" : statements,
+			"type" : types,
+			"user type" : user_types
+		];
+
+		foreach ( identity, symbol_array; symbols )
+			if ( canFind( symbol_array, token ) )
+				return identity;
+		
+		return "identifier";
 	}
 	unittest
 	{
@@ -259,40 +252,23 @@ class parser
 	{
 		import std.file : read;
 
-		writeln( "Parsing import test" );
-		parser p = new parser( "tests/import.delight" );
-		auto result = read( "tests/import.d" );
-		assert( p.parse() == result );
+		string[] tests = [
+			"import",
+			"comments",
+			"assignment",
+			"indent",
+			"functions",
+			"conditionals",
+			"arrays"
+		];
 
-		writeln( "Parsing comments test" );
-		p = new parser( "tests/comments.delight" );
-		result = read( "tests/comments.d" );
-		assert( p.parse() == result );
-
-		writeln( "Parsing assignment test" );
-		p = new parser( "tests/assignment.delight" );
-		result = read( "tests/assignment.d" );
-		assert( p.parse() == result );
-
-		writeln( "Parsing indent test" );
-		p = new parser( "tests/indent.delight" );
-		result = read( "tests/indent.d" );
-		assert( p.parse() == result );
-
-		writeln( "Parsing functions test" );
-		p = new parser( "tests/functions.delight" );
-		result = read( "tests/functions.d" );
-		assert( p.parse() == result );
-
-		writeln( "Parsing conditionals test" );
-		p = new parser( "tests/conditionals.delight" );
-		result = read( "tests/conditionals.d" );
-		assert( p.parse() == result );
-
-		writeln( "Parsing array test" );
-		p = new parser( "tests/arrays.delight" );
-		result = read( "tests/arrays.d" );
-		assert( p.parse() == result );
+		foreach ( test; tests )
+		{
+			writeln( "Parsing " ~ test ~ " test" );
+			parser p = new parser( "tests/" ~ test ~ ".delight" );
+			auto result = read( "tests/" ~ test ~ ".d" );
+			assert( p.parse() == result );
+		}
 	}
 
 	/** The starting state for the parser */
