@@ -257,6 +257,8 @@ class parser
 	}
 	unittest
 	{
+		import std.file : read;
+
 		writeln( "Parsing import test" );
 		parser p = new parser( "tests/import.delight" );
 		auto result = read( "tests/import.d" );
@@ -286,6 +288,11 @@ class parser
 		p = new parser( "tests/conditionals.delight" );
 		result = read( "tests/conditionals.d" );
 		assert( p.parse() == result );
+
+		writeln( "Parsing array test" );
+		p = new parser( "tests/arrays.delight" );
+		result = read( "tests/arrays.d" );
+		assert( p.parse() == result );
 	}
 
 	/** The starting state for the parser */
@@ -302,7 +309,7 @@ class parser
 			case "conditional":
 				return conditional_state( token );
 			case "type":
-				return token ~ " " ~ declare_state( l.pop() );
+				return token ~ declare_state( l.pop() );
 			case "function type":
 				return function_declaration_state( token );
 			case "identifier":
@@ -399,11 +406,27 @@ class parser
 	/** This state takes care of variable declaration */
 	string declare_state( string token )
 	{
-		if ( identify_token( token ) != "identifier" )
-			throw new Exception( unexpected( token ) );
+		string result;
 
-		string result = token;
+		// Array declarations
+		while ( identify_token( token ) != "identifier" )
+		{
+			if ( token != "[" )
+				throw new Exception( unexpected( token ) );
+			else
+				result ~= "[";
 
+			if ( identify_token( l.peek() ) == "number literal"
+					|| identify_token( l.peek() ) == "type" )
+				result ~= l.pop();
+
+			if ( l.peek() == "]" )
+				result ~= l.pop();
+
+			token = l.pop();
+		}
+
+		result ~= " " ~ token;
 		token = l.pop();
 
 		switch ( identify_token( token ) )
@@ -534,12 +557,22 @@ class parser
 	{
 		switch ( identify_token( token ) )
 		{
-			// calling a function
 			case "punctuation":
+				// calling a function
 				if ( token == "(" )
+				{
 					return token ~ function_call_state( l.pop() ) ~ ";";
+				}
+				// array
+				else if ( token == "[" )
+				{
+					string array = array_state( token );
+					return array ~ identifier_state( l.pop() );
+				}
 				else
+				{
 					throw new Exception( unexpected( token ) );
+				}
 			
 			// assigning a variable
 			case "assignment operator":
@@ -570,6 +603,51 @@ class parser
 		}
 	}
 
+	/** Array accesses can have multiple sets of brackets, no commas */
+	string array_state( string token )
+	{
+		string result = token;
+		while ( true )
+		{
+			if ( l.peek() != "]" )
+				result ~= expression_state( l.pop() );
+			
+			if ( l.peek() == "]" )
+				result ~= l.pop();
+			else
+				throw new Exception( unexpected( l.peek() ) );
+
+			if ( l.peek() != "[" )
+				break;
+			else
+				result ~= l.pop();
+		}
+
+		return result;
+	}
+
+	/** array literals can have commas and only one set of exterior brackets */
+	string array_literal_state( string token )
+	{
+		string result = token;
+		while ( true )
+		{
+			if ( l.peek() != "]" )
+				result ~= expression_state( l.pop() );
+
+			token = l.pop();
+			result ~= token;
+			if ( token == "," )
+				continue;
+			else if ( token == "]" )
+				break;
+			else
+				throw new Exception( unexpected( token ) );
+		}
+		
+		return result;
+	}
+
 	/** Expression state */
 	string expression_state( string token )
 	{
@@ -579,18 +657,26 @@ class parser
 			case "string literal":
 			case "character literal":
 			case "number literal":
+				expression = token;
+				break;
 			case "identifier":
 				expression = token;
-				if ( identify_token( token ) == "identifier" && l.peek() == "(" )
+				if ( l.peek() == "(" )
 				{
 					l.pop();
 					expression ~= "(" ~ function_call_state( l.pop() );
+				}
+				else if ( l.peek() == "[" )
+				{
+					expression ~= array_state( l.pop() );
 				}
 				break;
 			case "punctuation":
 				// sub-expression in parentheses
 				if ( token == "(" )
 					expression = token ~ expression_state( l.pop() );
+				else if ( token == "[" )
+					expression = array_literal_state( token );
 				else
 					throw new Exception( unexpected( token ) );
 				break;
@@ -645,18 +731,10 @@ class parser
 			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
 		}
 
-		switch ( l.peek() )
-		{
-			case ")":
-				return expression ~ l.pop();
-			case "\n":
-			case "#":
-			case "#.":
-			case ":":
-				return expression;
-			default:
-				throw new Exception( unexpected( l.peek() ) );
-		}
+		if ( l.peek() == ")" )
+			return expression ~ l.pop();
+		else
+			return expression;
 	}
 
 	/** Expecting the end of a line */
