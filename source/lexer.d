@@ -156,6 +156,7 @@ class lexer
 		string newlines;
 		while ( current_line == "\n" )
 		{
+			line_number += 1;
 			newlines ~= "\n";
 			current_line = f.readln();
 		}
