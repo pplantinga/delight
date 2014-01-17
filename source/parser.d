@@ -385,21 +385,30 @@ class parser
 		string result;
 
 		// Array declarations
-		while ( identify_token( token ) != "identifier" )
+		if ( token == "[" )
 		{
-			if ( token != "[" )
-				throw new Exception( unexpected( token ) );
-			else
-				result ~= "[";
+			result = "[";
 
-			if ( identify_token( l.peek() ) == "number literal"
-					|| identify_token( l.peek() ) == "type" )
-				result ~= l.pop();
+			while ( identify_token( token ) != "identifier" )
+			{
+				if ( identify_token( token ) == "number literal"
+						|| identify_token( token ) == "type" )
+					result ~= token;
 
-			if ( l.peek() == "]" )
-				result ~= l.pop();
+				string next = l.pop();
+				if ( next == "," )
+					result ~= "][";
+				else if ( next == "]" )
+					result ~= "]";
+				else
+					throw new Exception( unexpected( next ) );
 
-			token = l.pop();
+				token = l.pop();
+			}
+		}
+		else if ( identify_token( token ) != "identifier" )
+		{
+			throw new Exception( unexpected( token ) );
 		}
 
 		result ~= " " ~ token;
@@ -582,24 +591,22 @@ class parser
 	/** Array accesses can have multiple sets of brackets, no commas */
 	string array_state( string token )
 	{
+		if ( token != "[" )
+			throw new Exception( unexpected( token ) );
+		
 		string result = token;
-		while ( true )
+		while ( l.peek() != "]" )
 		{
-			if ( l.peek() != "]" )
-				result ~= expression_state( l.pop() );
+			result ~= expression_state( l.pop() );
 			
-			if ( l.peek() == "]" )
-				result ~= l.pop();
-			else
-				throw new Exception( unexpected( l.peek() ) );
-
-			if ( l.peek() != "[" )
-				break;
-			else
-				result ~= l.pop();
+			if ( l.peek() == "," )
+			{
+				l.pop();
+				result ~= "][";
+			}
 		}
 
-		return result;
+		return result ~ l.pop();
 	}
 
 	/** array literals can have commas and only one set of exterior brackets */
