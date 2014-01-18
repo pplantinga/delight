@@ -384,8 +384,22 @@ class parser
 		l.pop();
 		result ~= "; ";
 
-		if ( identify_token( l.peek() ) != "identifier" )
+		if ( identify_token( l.peek() ) == "number literal" )
+		{
+			result ~= l.pop();
+
+			if ( l.peek() != ".." )
+				throw new Exception( unexpected( l.peek() ) );
+
+			result ~= " " ~ l.pop() ~ " ";
+
+			if ( identify_token( l.peek() ) != "number literal" )
+				throw new Exception( unexpected( l.peek() ) );
+		}
+		else if ( identify_token( l.peek() ) != "identifier" )
+		{
 			throw new Exception( unexpected( l.peek() ) );
+		}
 
 		result ~= l.pop();
 

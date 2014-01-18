@@ -4,6 +4,9 @@ procedure main:
 	for x in arr:
 		i += x
 
+	for j in 0 .. 5:
+		i -= j
+
 	while i less than 10:
 		i *= 2
 

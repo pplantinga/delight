@@ -237,6 +237,7 @@ class lexer
 			`equal to`,
 			`[A-Za-z_]+`,           // identifiers and keywords
 			`->`,                   // function return
+			`\.\.`,                 // range and slice operator
 			`[+*%/~^-]?=`,          // assignment operators
 			`[.,:\[\]()+*~/%\n^-]`  // punctuation and operators
 		];

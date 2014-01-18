@@ -7,6 +7,11 @@ void main()
 		i += x;
 	}
 	
+	foreach (j; 0 .. 5)
+	{
+		i -= j;
+	}
+	
 	while (i < 10)
 	{
 		i *= 2;
