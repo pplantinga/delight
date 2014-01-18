@@ -1,2 +1,3 @@
-import std
-import std.stdio
+import std.stdio : writeln, File
+procedure main:
+	writeln( "Hello, world!" )

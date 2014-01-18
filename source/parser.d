@@ -341,6 +341,22 @@ class parser
 			result ~= l.pop();
 		}
 
+		if ( l.peek() == ":" )
+		{
+			result ~= l.pop() ~ " ";
+			
+			while ( identify_token( l.peek() ) != "\n" )
+			{
+				if ( identify_token( l.peek() ) == "identifier" )
+					result ~= l.pop();
+				else
+					throw new Exception( unexpected( token ) );
+
+				if ( l.peek() == "," )
+					result ~= l.pop() ~ " ";
+			}
+		}
+
 		return result ~ endline_state( l.pop() );
 	}
 

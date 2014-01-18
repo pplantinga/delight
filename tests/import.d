@@ -1,2 +1,5 @@
-import std;
-import std.stdio;
+import std.stdio: writeln, File;
+void main()
+{
+	writeln("Hello, world!");
+}
