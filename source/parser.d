@@ -40,7 +40,6 @@ class parser
 		"abstract",
 		"const",
 		"immutable",
-		"in",
 		"inout",
 		"lazy",
 		"nothrow",
@@ -56,6 +55,7 @@ class parser
 	/** Compare and contrast, producing booleans. */
 	static immutable string[] comparators = [
 		"equal to",
+		"in",
 		"is",
 		"less than",
 		"more than",
@@ -114,17 +114,15 @@ class parser
 		"break",
 		"catch",
 		"continue",
-		"do",
 		"finally",
-		"foreach",
-		"foreach_reverse",
+		"for",
 		"import",
 		"mixin",
 		"return",
 		"switch",
 		"throw",
 		"try",
-		"typeof"
+		"typeof",
 		"while"
 	];
 
@@ -217,7 +215,7 @@ class parser
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
 		assert( p.identify_token( ":" ) == "punctuation" );
-		assert( p.identify_token( "foreach" ) == "statement" );
+		assert( p.identify_token( "for" ) == "statement" );
 		assert( p.identify_token( "try" ) == "statement" );
 		assert( p.identify_token( "char" ) == "type" );
 		assert( p.identify_token( "string" ) == "type" );
@@ -259,7 +257,8 @@ class parser
 			"indent",
 			"functions",
 			"conditionals",
-			"arrays"
+			"arrays",
+			"loops"
 		];
 
 		foreach ( test; tests )
@@ -280,6 +279,10 @@ class parser
 			case "statement":
 				if ( token == "import" )
 					return token ~ " " ~ library_state( l.pop() );
+				else if ( token == "for" )
+					return "foreach (" ~ foreach_state( l.pop() ) ~ ")";
+				else if ( token == "while" )
+					return "while (" ~ while_state( l.pop() ) ~ ")";
 				else
 					return token ~ " " ~ expression_state( l.pop() ) ~ ";";
 			case "conditional":
@@ -358,6 +361,52 @@ class parser
 		}
 
 		return result ~ endline_state( l.pop() );
+	}
+
+	/** Default loop state. Form is "for key, item in array" */
+	string foreach_state( string token )
+	{
+		if ( identify_token( token ) != "identifier" )
+			throw new Exception( unexpected( token ) );
+
+		string result = token;
+		if ( l.peek() == "," )
+		{
+			result ~= l.pop();
+			if ( identify_token( l.peek() ) != "identifier" )
+				throw new Exception( unexpected( l.peek() ) );
+			result ~= l.pop();
+		}
+
+		if ( l.peek() != "in" )
+			throw new Exception( unexpected( l.peek() ) );
+
+		l.pop();
+		result ~= "; ";
+
+		if ( identify_token( l.peek() ) != "identifier" )
+			throw new Exception( unexpected( l.peek() ) );
+
+		result ~= l.pop();
+
+		if ( l.peek() != ":" )
+			throw new Exception( unexpected( l.peek() ) );
+
+		l.pop();
+
+		return result;
+	}
+
+	string while_state( string token )
+	{
+		string expression = expression_state( token );
+
+		if ( l.peek() != ":" )
+			throw new Exception( unexpected( l.peek() ) );
+
+		l.pop();
+
+		return expression;
 	}
 
 	/** Control branching */

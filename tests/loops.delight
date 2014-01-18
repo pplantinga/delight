@@ -1,0 +1,10 @@
+procedure main:
+	int[] arr = [1, 2, 3]
+	int i = 0
+	for x in arr:
+		i += x
+
+	while i less than 10:
+		i *= 2
+
+		i -= 2
