@@ -21,22 +21,13 @@ class parser
 {
 	/** Breaks source code into tokens */
 	lexer l;
+
+	/// Stores regexes for determining what tokens are
+	Regex!char[string] symbol_regexes;
 	string context = "start";
 
-	/** These give a new value to a variable */
-	static immutable string[] assignment_operators = [
-		"=",
-		"+=",
-		"-=",
-		"*=",
-		"/=",
-		"%=",
-		"~=",
-		"^="
-	];
-	
 	/** These are used when declaring things. */
-	static immutable string[] attributes = [
+	auto attribute_regex = regex( "^(" ~ join( [
 		"abstract",
 		"const",
 		"immutable",
@@ -50,66 +41,39 @@ class parser
 		"shared",
 		"static",
 		"synchronized"
-	];
+	], "|" ) ~ ")$" );
 
 	/** Compare and contrast, producing booleans. */
-	static immutable string[] comparators = [
+	auto comparator_regex = regex( "^(" ~ join( [
 		"equal to",
 		"in",
 		"is",
 		"less than",
 		"more than",
 		"not"
-	];
+	], "|" ) ~ ")$" );
 
 	/** Statements used for branching */
-	static immutable string[] conditionals = [
+	auto conditional_regex = regex( "^(" ~ join( [
 		"if",
 		"else"
-	];
+	], "|" ) ~ ")$" );
 
 	/** Function types. */
-	static immutable string[] function_types = [
+	auto function_type_regex = regex( "^(" ~ join( [
 		"function",
 		"method",
 		"procedure"
-	];
+	], "|" ) ~ ")$" );
 
 	/** join comparisons */
-	static immutable string[] logical = [
+	auto logical_regex = regex( "^(" ~ join( [
 		"and",
 		"or"
-	];
-
-	/** All about combining literals and variables creating expressions. */
-	static immutable string[] operators = [
-		"+",
-		"-",
-		"*",
-		"/",
-		"%",
-		"~",
-		"^"
-	];
-
-	/** These do weird stuff. */
-	static immutable string[] punctuation = [
-		",",
-		".",
-		":",
-		"(",
-		")",
-		"[",
-		"]",
-		"\"",
-		"'",
-		"#",
-		"#.",
-		"->"
-	];
+	], "|" ) ~ ")$" );
 
 	/** These do things. */
-	static immutable string[] statements = [
+	auto statement_regex = regex( "^(" ~ join( [
 		"assert",
 		"break",
 		"catch",
@@ -124,10 +88,10 @@ class parser
 		"try",
 		"typeof",
 		"while"
-	];
+	], "|" ) ~ ")$" );
 
 	/** How is stuff stored in memory? */
-	static immutable string[] types = [
+	auto type_regex = regex( "^(" ~ join( [
 		"auto", "bool", "void", "string",
 		"byte", "short", "int", "long", "cent",
 		"ubyte", "ushort", "uint", "ulong", "ucent",
@@ -135,57 +99,54 @@ class parser
 		"ifloat", "idouble", "ireal",
 		"cfloat", "cdouble", "creal",
 		"char", "wchar", "dchar"
-	];
+	], "|" ) ~ ")$" );
 
 	/** More complicated types. */
-	static immutable string[] user_types = [
+	auto user_type_regex = regex( "^(" ~ join( [
 		"alias",
 		"class",
 		"enum",
 		"struct",
 		"union"
-	];
+	], "|" ) ~ ")$" );
 
 	/** Initialize with a string containing location of source code. */
 	this( string filename )
 	{
 		/** Lexer parses source into tokens */
 		l = new lexer( filename );
+
+		/// Unfortunately, associative array literals
+		/// can only happen inside a function in D
+		symbol_regexes = [
+			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
+			"attribute"           : attribute_regex,
+			"character literal"   : regex( `^'\\?.'$` ),
+			"comparator"          : comparator_regex,
+			"conditional"         : conditional_regex,
+			"function type"       : function_type_regex,
+			"logical"             : logical_regex,
+			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
+			"operator"            : regex( `^[+*%^/~-]$` ),
+			"punctuation"         : regex( `^([.,:()\[\]#]|\.\.|#\.|->)$` ),
+			"statement"           : statement_regex,
+			"string literal"      : regex( `^".*"$` ),
+			"template type"       : regex( `^[A-Z]$` ),
+			"type"                : type_regex,
+			"user type"           : user_type_regex
+		];
 	}
 
 	/** What kind of thing is this token? */
 	string identify_token( string token )
 	{
-		if ( !matchFirst( token, `^\n|indent [+-]1|begin$` ).empty )
+		// Tokens that don't have a name
+		if ( !matchFirst( token, `^(\n|indent [+-]1|begin)$` ).empty )
 			return token;
-		else if ( !matchFirst( token, `^".*"$` ).empty )
-			return "string literal";
-		else if ( !matchFirst( token, `^'\\?.'$` ).empty )
-			return "character literal";
-		else if ( !matchFirst( token, `^[0-9]+.?[0-9]*$` ).empty )
-			return "number literal";
-		else if ( !matchFirst( token, `^[A-Z]$` ).empty )
-			return "template type";
 
-		/// Unfortunately, associative array literals
-		/// can only happen inside a function in D
-		auto symbols = [
-			"assignment operator" : assignment_operators,
-			"attribute" : attributes,
-			"comparator" : comparators,
-			"conditional" : conditionals,
-			"function type" : function_types,
-			"logical" : logical,
-			"operator" : operators,
-			"punctuation" : punctuation,
-			"statement" : statements,
-			"type" : types,
-			"user type" : user_types
-		];
-
-		foreach ( identity, symbol_array; symbols )
-			if ( canFind( symbol_array, token ) )
-				return identity;
+		foreach ( symbol, symbol_regex; symbol_regexes )
+			if ( !matchFirst( token, symbol_regex ).empty )
+				return symbol;
 		
 		return "identifier";
 	}
@@ -195,8 +156,8 @@ class parser
 		parser p = new parser( "tests/import.delight" );
 		assert( p.identify_token( "\n" ) == "\n" );
 		assert( p.identify_token( "indent -1" ) == "indent -1" );
-		assert( p.identify_token( "\"\"" ) == "string literal" );
-		assert( p.identify_token( "\"string\"" ) == "string literal" );
+		assert( p.identify_token( `""` ) == "string literal" );
+		assert( p.identify_token( `"string"` ) == "string literal" );
 		assert( p.identify_token( "'a'" ) == "character literal" );
 		assert( p.identify_token( "'\\n'" ) == "character literal" );
 		assert( p.identify_token( "5" ) == "number literal" );
@@ -215,6 +176,10 @@ class parser
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
 		assert( p.identify_token( ":" ) == "punctuation" );
+		assert( p.identify_token( "#" ) == "punctuation" );
+		assert( p.identify_token( "#." ) == "punctuation" );
+		assert( p.identify_token( "->" ) == "punctuation" );
+		assert( p.identify_token( ".." ) == "punctuation" );
 		assert( p.identify_token( "for" ) == "statement" );
 		assert( p.identify_token( "try" ) == "statement" );
 		assert( p.identify_token( "char" ) == "type" );
