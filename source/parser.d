@@ -19,14 +19,16 @@ import std.algorithm : canFind;
 
 class parser
 {
-	/** Breaks source code into tokens */
+	/// Breaks source code into tokens
 	lexer l;
 
 	/// Stores regexes for determining what tokens are
 	Regex!char[string] symbol_regexes;
+
+	/// Keeps track of the current context
 	string context = "start";
 
-	/** These are used when declaring things. */
+	/// These are used when declaring things.
 	auto attribute_regex = regex( "^(" ~ join( [
 		"abstract",
 		"const",
@@ -43,7 +45,7 @@ class parser
 		"synchronized"
 	], "|" ) ~ ")$" );
 
-	/** Compare and contrast, producing booleans. */
+	/// Compare and contrast, producing booleans.
 	auto comparator_regex = regex( "^(" ~ join( [
 		"equal to",
 		"in",
@@ -53,26 +55,26 @@ class parser
 		"not"
 	], "|" ) ~ ")$" );
 
-	/** Statements used for branching */
+	/// Statements used for branching
 	auto conditional_regex = regex( "^(" ~ join( [
 		"if",
 		"else"
 	], "|" ) ~ ")$" );
 
-	/** Function types. */
+	/// Function types.
 	auto function_type_regex = regex( "^(" ~ join( [
 		"function",
 		"method",
 		"procedure"
 	], "|" ) ~ ")$" );
 
-	/** join comparisons */
+	/// join comparisons
 	auto logical_regex = regex( "^(" ~ join( [
 		"and",
 		"or"
 	], "|" ) ~ ")$" );
 
-	/** These do things. */
+	/// These do things.
 	auto statement_regex = regex( "^(" ~ join( [
 		"assert",
 		"break",
@@ -90,7 +92,7 @@ class parser
 		"while"
 	], "|" ) ~ ")$" );
 
-	/** How is stuff stored in memory? */
+	/// How is stuff stored in memory?
 	auto type_regex = regex( "^(" ~ join( [
 		"auto", "bool", "void", "string",
 		"byte", "short", "int", "long", "cent",
@@ -101,7 +103,7 @@ class parser
 		"char", "wchar", "dchar"
 	], "|" ) ~ ")$" );
 
-	/** More complicated types. */
+	/// More complicated types.
 	auto user_type_regex = regex( "^(" ~ join( [
 		"alias",
 		"class",
@@ -110,10 +112,14 @@ class parser
 		"union"
 	], "|" ) ~ ")$" );
 
-	/** Initialize with a string containing location of source code. */
+	/**
+	 * Constructor takes a string containing location of source code
+	 * and generates a lexer for creating tokens out of text
+	 * and a symbol regex array
+	 */
 	this( string filename )
 	{
-		/** Lexer parses source into tokens */
+		/// Lexer parses source into tokens
 		l = new lexer( filename );
 
 		/// Unfortunately, associative array literals
@@ -137,7 +143,7 @@ class parser
 		];
 	}
 
-	/** What kind of thing is this token? */
+	/// What kind of thing is this token?
 	string identify_token( string token )
 	{
 		// Tokens that don't have a name
@@ -190,6 +196,12 @@ class parser
 		assert( p.identify_token( "asdf" ) == "identifier" );
 	}
 	
+	/**
+	 * The parse function takes tokens from the lexer
+	 * and passes them to the start state one at a time.
+	 *
+	 * The end result should be valid D code.
+	 */
 	string parse()
 	{
 		string result;
@@ -235,7 +247,7 @@ class parser
 		}
 	}
 
-	/** The starting state for the parser */
+	/// The starting state for the parser
 	string start_state( string token )
 	{
 		string endline = endline();
@@ -291,7 +303,7 @@ class parser
 		}
 	}
 
-	/** This state takes care of stuff after an import */
+	/// This state takes care of stuff after an import
 	string library_state( string token )
 	{
 		if ( identify_token( token ) != "identifier" )
@@ -328,7 +340,7 @@ class parser
 		return result ~ endline_state( l.pop() );
 	}
 
-	/** Default loop state. Form is "for key, item in array" */
+	/// Default loop state. Form is "for key, item in array"
 	string foreach_state( string token )
 	{
 		if ( identify_token( token ) != "identifier" )
@@ -388,7 +400,7 @@ class parser
 		return expression;
 	}
 
-	/** Control branching */
+	/// Control branching
 	string conditional_state( string token )
 	{
 		string next = l.pop();
@@ -423,7 +435,7 @@ class parser
 		return condition;
 	}
 
-	/** This state takes care of variable declaration */
+	/// This state takes care of variable declaration
 	string declare_state( string token )
 	{
 		string result;
@@ -469,7 +481,7 @@ class parser
 		}
 	}
 
-	/** This state takes care of function declaration */
+	/// This state takes care of function declaration
 	string function_declaration_state( string token )
 	{
 		// First check if we're a function, method, or procedure
@@ -518,7 +530,7 @@ class parser
 			throw new Exception( unexpected( colon ) );
 	}
 
-	/** This parses args to functions of form "(int a, b, T t..." */
+	/// This parses args to functions of form "(int a, b, T t..."
 	string parse_args( string token )
 	{
 		// Function params must start with "("
@@ -557,7 +569,7 @@ class parser
 		return result;
 	}
 
-	/** Parse return type. If none, return auto */
+	/// Parse return type. If none, return auto
 	string parse_return_type( string token )
 	{
 		// no return type, guess
@@ -581,7 +593,7 @@ class parser
 		return type;
 	}
 
-	/** Determine if we're calling a function or assigning to a varible */
+	/// Determine if we're calling a function or assigning to a varible
 	string identifier_state( string token )
 	{
 		switch ( identify_token( token ) )
@@ -611,7 +623,7 @@ class parser
 		}
 	}
 
-	/** Function call state */
+	/// Parses arguments to a function
 	string function_call_state( string token )
 	{
 		switch ( identify_token( token ) )
@@ -632,7 +644,7 @@ class parser
 		}
 	}
 
-	/** Array accesses can have multiple sets of brackets, no commas */
+	/// Array accesses can have multiple sets of brackets, no commas
 	string array_state( string token )
 	{
 		if ( token != "[" )
@@ -653,7 +665,7 @@ class parser
 		return result ~ l.pop();
 	}
 
-	/** array literals can have commas and only one set of exterior brackets */
+	/// array literals can have commas and only one set of exterior brackets
 	string array_literal_state( string token )
 	{
 		string result = token;
@@ -675,7 +687,7 @@ class parser
 		return result;
 	}
 
-	/** Expression state */
+	/// Expression state
 	string expression_state( string token )
 	{
 		string expression;
@@ -719,7 +731,7 @@ class parser
 				throw new Exception( unexpected( token ) );
 		}
 
-		/** Contains conversions to D operators */
+		/// Contains conversions to D operators
 		string[string] conversion = [
 			"and": "&&",
 			"or": "||",
@@ -764,7 +776,7 @@ class parser
 			return expression;
 	}
 
-	/** Expecting the end of a line */
+	/// Expecting the end of a line
 	string endline_state( string token )
 	{
 		if ( token == "\n" )
@@ -773,7 +785,7 @@ class parser
 			throw new Exception( unexpected( token ) );
 	}
 
-	/** Block comments eat the rest of the input until it un-indents */
+	/// Block comments eat the rest of the input until it un-indents
 	string block_comment_state( string token )
 	{
 		string indent = join( repeat( l.indentation, l.block_comment_level ) );
@@ -813,7 +825,7 @@ class parser
 		return result ~= "/" ~ endline();
 	}
 
-	/** Inline comments just eat the rest of the line */
+	/// Inline comments just eat the rest of the line
 	string inline_comment_state( string token )
 	{
 		string result;
@@ -832,7 +844,7 @@ class parser
 			throw new Exception( unexpected( newline ) );
 	}
 
-	/** New line, plus indentation */
+	/// New line, plus indentation
 	string endline()
 	{
 		int level = l.indentation_level;
