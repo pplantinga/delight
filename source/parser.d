@@ -341,7 +341,7 @@ class parser
 		}
 
 		if ( l.peek() != "in" )
-			throw new Exception( unexpected( l.peek() ) );
+			throw new Exception( expected( "in", l.peek() ) );
 
 		l.pop();
 		result ~= "; ";
@@ -351,7 +351,7 @@ class parser
 			result ~= l.pop();
 
 			if ( l.peek() != ".." )
-				throw new Exception( unexpected( l.peek() ) );
+				throw new Exception( expected( "..", l.peek() ) );
 
 			result ~= " " ~ l.pop() ~ " ";
 
@@ -366,7 +366,7 @@ class parser
 		result ~= l.pop();
 
 		if ( l.peek() != ":" )
-			throw new Exception( unexpected( l.peek() ) );
+			throw new Exception( expected( ":", l.peek() ) );
 
 		l.pop();
 
@@ -380,7 +380,7 @@ class parser
 		string expression = expression_state( token );
 
 		if ( l.peek() != ":" )
-			throw new Exception( unexpected( l.peek() ) );
+			throw new Exception( expected( ":", l.peek() ) );
 
 		l.pop();
 
@@ -416,7 +416,7 @@ class parser
 			colon = l.pop();
 
 		if ( colon != ":" )
-			throw new Exception( unexpected( colon ) );
+			throw new Exception( expected( ":", colon ) );
 
 		return condition;
 	}
@@ -443,7 +443,7 @@ class parser
 				else if ( next == "]" )
 					result ~= "]";
 				else
-					throw new Exception( unexpected( next ) );
+					throw new Exception( expected( ",' or ']", next ) );
 
 				token = l.pop();
 			}
@@ -512,7 +512,7 @@ class parser
 		if ( colon == ":" )
 			return start ~ return_type ~ " " ~ name ~ "(" ~ args ~ ")";
 		else
-			throw new Exception( unexpected( colon ) );
+			throw new Exception( expected( ":", colon ) );
 	}
 
 	/// This parses args in function declarations of form "(int a, b, T t..."
@@ -520,7 +520,7 @@ class parser
 	{
 		// Function params must start with "("
 		if ( token != "(" )
-			throw new Exception( unexpected( token ) );
+			throw new Exception( expected( "(", token ) );
 
 		string result;
 		string template_types;
@@ -563,7 +563,7 @@ class parser
 		
 		// return type must start with "-> type"
 		if ( token != "->" )
-			throw new Exception( unexpected( token ) );
+			throw new Exception( expected( "->", token ) );
 
 		if ( identify_token( l.peek() ) != "type" )
 			throw new Exception( unexpected( l.peek() ) );
@@ -623,7 +623,7 @@ class parser
 				else if ( next == ")" )
 					return token ~ ")";
 				else
-					throw new Exception( unexpected( next ) );
+					throw new Exception( expected( ",' or ')", next ) );
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -633,7 +633,7 @@ class parser
 	string array_state( string token )
 	{
 		if ( token != "[" )
-			throw new Exception( unexpected( token ) );
+			throw new Exception( expected( "[", token ) );
 		
 		string result = token;
 		while ( l.peek() != "]" )
@@ -666,7 +666,7 @@ class parser
 			else if ( token == "]" )
 				break;
 			else
-				throw new Exception( unexpected( token ) );
+				throw new Exception( expected( ",' or ']", token ) );
 		}
 		
 		return result;
@@ -767,7 +767,7 @@ class parser
 		if ( token == "\n" )
 			return ";" ~ endline();
 		else
-			throw new Exception( unexpected( token ) );
+			throw new Exception( expected( "newline", token ) );
 	}
 
 	/// Block comments eat the rest of the input until it un-indents
@@ -819,14 +819,14 @@ class parser
 		else if ( token == "#." )
 			result = "///";
 		else
-			throw new Exception( unexpected( token ) );
+			throw new Exception( expected( "#", token ) );
 
 		result ~= l.pop();
 		string newline = l.pop();
 		if ( newline == "\n" )
 			return result ~ endline();
 		else
-			throw new Exception( unexpected( newline ) );
+			throw new Exception( expected( "newline", newline ) );
 	}
 
 	/// Newlines keep indent and stuff
@@ -884,5 +884,13 @@ class parser
 	string unexpected( string token )
 	{
 		return "On line " ~ to!string( l.line_number ) ~ ": unexpected " ~ identify_token( token ) ~ " '" ~ token ~ "'";
+	}
+
+	/**
+	 * We expected to find this token, but didn't
+	 */
+	string expected( string expected, string unexpected )
+	{
+		return "On line " ~ to!string( l.line_number ) ~ ": expected '" ~ expected ~ "' but got '" ~ unexpected ~ "'";
 	}
 }
