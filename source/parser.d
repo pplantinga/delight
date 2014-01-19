@@ -133,6 +133,7 @@ class parser
 			"conditional"         : conditional_regex,
 			"function type"       : function_type_regex,
 			"logical"             : logical_regex,
+			"newline"             : regex( `^(\n|indent [+-]1|begin)$` ),
 			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
 			"operator"            : regex( `^[+*%^/~-]$` ),
 			"punctuation"         : regex( `^([.,:()\[\]#]|\.\.|#\.|->)$` ),
@@ -147,25 +148,26 @@ class parser
 		context.insertFront( "start" );
 	}
 
-	/// What kind of thing is this token?
+	/**
+	 * Find the symbol associated with a token
+	 */
 	string identify_token( string token )
 	{
-		// Tokens that don't have a name
-		if ( !matchFirst( token, `^(\n|indent [+-]1|begin)$` ).empty )
-			return token;
-
+		// Try to match the token to a symbol
 		foreach ( symbol, symbol_regex; symbol_regexes )
 			if ( !matchFirst( token, symbol_regex ).empty )
 				return symbol;
 		
+		// If we don't match anything else, we're an identifier
 		return "identifier";
 	}
 	unittest
 	{
 		writeln( "identify_token import" );
 		parser p = new parser( "tests/import.delight" );
-		assert( p.identify_token( "\n" ) == "\n" );
-		assert( p.identify_token( "indent -1" ) == "indent -1" );
+		assert( p.identify_token( "\n" ) == "newline" );
+		assert( p.identify_token( "indent -1" ) == "newline" );
+		assert( p.identify_token( "begin" ) == "newline" );
 		assert( p.identify_token( `""` ) == "string literal" );
 		assert( p.identify_token( `"string"` ) == "string literal" );
 		assert( p.identify_token( "'a'" ) == "character literal" );
@@ -278,12 +280,7 @@ class parser
 					return inline_comment_state( token );
 				else
 					throw new Exception( unexpected( token ) );
-			
-			// Newline states
-			case "begin":
-			case "\n":
-			case "indent +1":
-			case "indent -1":
+			case "newline":
 				return newline_state( token );
 			default:
 				throw new Exception( unexpected( token ) );
@@ -312,12 +309,12 @@ class parser
 		{
 			result ~= l.pop() ~ " ";
 			
-			while ( identify_token( l.peek() ) != "\n" )
+			while ( l.peek() != "\n" )
 			{
 				if ( identify_token( l.peek() ) == "identifier" )
 					result ~= l.pop();
 				else
-					throw new Exception( unexpected( token ) );
+					throw new Exception( unexpected( l.peek() ) );
 
 				if ( l.peek() == "," )
 					result ~= l.pop() ~ " ";
