@@ -1,0 +1,4 @@
+class test:
+	int myvar = 5
+	method addto( int a ):
+		myvar += a

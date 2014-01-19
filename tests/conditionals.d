@@ -8,13 +8,21 @@ void main()
 	{
 		x = y + z;
 	}
-	
+
 	else if (x == y + z || x + 2 != z)
 	{
 		y = z;
 		
-		z = x;
+		if (y == 3)
+		{
+			z = x;
+		}
+		else
+		{
+			z = y;
+		}
 	}
+
 	else if (!z)
 	{
 		y = 3;

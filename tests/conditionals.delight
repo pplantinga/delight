@@ -9,7 +9,11 @@ procedure main:
 	else if x equal to y + z or x + 2 not equal to z:
 		y = z
 
-		z = x
+		if y equal to 3:
+			z = x
+		else:
+			z = y
+
 	else if not z:
 		y = 3
 	else:

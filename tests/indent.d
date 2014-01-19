@@ -6,7 +6,7 @@ void main()
 		
 		return c;
 	}
-	
+
 	int c = add(1, 2);
 	
 	int d = add(c, 2);

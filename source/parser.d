@@ -16,6 +16,7 @@ import std.range : repeat;
 import std.regex;
 import std.string;
 import std.algorithm : canFind;
+import std.container : SList;
 
 class parser
 {
@@ -26,7 +27,7 @@ class parser
 	Regex!char[string] symbol_regexes;
 
 	/// Keeps track of the current context
-	string context = "start";
+	SList!string context;
 
 	/// These are used when declaring things.
 	auto attribute_regex = regex( "^(" ~ join( [
@@ -141,6 +142,9 @@ class parser
 			"type"                : type_regex,
 			"user type"           : user_type_regex
 		];
+
+		// Add a beginning symbol to the context stack
+		context.insertFront( "start" );
 	}
 
 	/// What kind of thing is this token?
@@ -292,6 +296,18 @@ class parser
 				else if ( token == "indent -1" )
 					bracket = "}";
 
+				// Exiting a context when there's an end-indent
+				if ( token == "indent -1" )
+				{
+					// Prepend newlines so we stay in proper context
+					while ( !l.is_empty() && l.peek() == "\n" )
+						endline = l.pop() ~ endline;
+
+					// We stay in "if" context when else-ing
+					if ( context.front != "if" || !l.is_empty() && l.peek() != "else" )
+						context.removeFront();
+				}
+
 				// Check if there's a block comment coming up
 				if ( !l.is_empty() && ( l.peek() == "#" || l.peek() == "#." ) )
 					return bracket ~ endline ~ block_comment_state( l.pop() );
@@ -343,6 +359,7 @@ class parser
 	/// Default loop state. Form is "for key, item in array"
 	string foreach_state( string token )
 	{
+		context.insertFront( "foreach" );
 		if ( identify_token( token ) != "identifier" )
 			throw new Exception( unexpected( token ) );
 
@@ -390,6 +407,8 @@ class parser
 
 	string while_state( string token )
 	{
+		context.insertFront( "while" );
+
 		string expression = expression_state( token );
 
 		if ( l.peek() != ":" )
@@ -405,10 +424,9 @@ class parser
 	{
 		string next = l.pop();
 
-		// Check for correct context
-		if ( token == "if" && context == "start" )
-			context = "if";
-		else if ( token != "if" && context == "start" )
+		if ( token == "if" )
+			context.insertFront( "if" );
+		else if ( token != "if" && context.front != "if" )
 			throw new Exception( unexpected( token ) );
 
 		// if, else if, else behavior
@@ -486,19 +504,18 @@ class parser
 	{
 		// First check if we're a function, method, or procedure
 		string start;
-		bool is_function, is_method, is_procedure = false;
 		switch ( token )
 		{
 			case "function":
-				is_function = true;
+				context.insertFront( "function" );
 				start = "pure ";
 				break;
 			case "method":
-				is_method = true;
+				context.insertFront( "method" );
 				start = "";
 				break;
 			case "procedure":
-				is_procedure = true;
+				context.insertFront( "procedure" );
 				start = "void";
 				break;
 			default:
@@ -518,7 +535,7 @@ class parser
 			return_type = parse_return_type( l.pop );
 
 			// Procedures have no return type
-			if ( !return_type && !is_procedure )
+			if ( !return_type && context.front != "procedure" )
 				return_type = "auto";
 		}
 		
@@ -530,7 +547,7 @@ class parser
 			throw new Exception( unexpected( colon ) );
 	}
 
-	/// This parses args to functions of form "(int a, b, T t..."
+	/// This parses args in function declarations of form "(int a, b, T t..."
 	string parse_args( string token )
 	{
 		// Function params must start with "("
