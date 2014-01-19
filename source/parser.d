@@ -254,7 +254,6 @@ class parser
 	/// The starting state for the parser
 	string start_state( string token )
 	{
-		string endline = endline();
 		switch ( identify_token( token ) )
 		{
 			case "statement":
@@ -285,35 +284,7 @@ class parser
 			case "\n":
 			case "indent +1":
 			case "indent -1":
-				// Don't use a newline if token is 'begin'
-				if ( token == "begin" )
-					endline = "";
-
-				// Don't use a bracket if token is 'begin' or 'newline' 
-				string bracket = "";
-				if ( token == "indent +1" )
-					bracket = "{";
-				else if ( token == "indent -1" )
-					bracket = "}";
-
-				// Exiting a context when there's an end-indent
-				if ( token == "indent -1" )
-				{
-					// Prepend newlines so we stay in proper context
-					while ( !l.is_empty() && l.peek() == "\n" )
-						endline = l.pop() ~ endline;
-
-					// We stay in "if" context when else-ing
-					if ( context.front != "if" || !l.is_empty() && l.peek() != "else" )
-						context.removeFront();
-				}
-
-				// Check if there's a block comment coming up
-				if ( !l.is_empty() && ( l.peek() == "#" || l.peek() == "#." ) )
-					return bracket ~ endline ~ block_comment_state( l.pop() );
-				else
-					return bracket ~ endline;
-
+				return newline_state( token );
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -859,6 +830,41 @@ class parser
 			return result ~ endline();
 		else
 			throw new Exception( unexpected( newline ) );
+	}
+
+	/// Newlines keep indent and stuff
+	string newline_state( string token )
+	{
+		string endline = endline();
+
+		// Don't use a newline if token is 'begin'
+		if ( token == "begin" )
+			endline = "";
+
+		// Don't use a bracket if token is 'begin' or 'newline' 
+		string bracket = "";
+		if ( token == "indent +1" )
+			bracket = "{";
+		else if ( token == "indent -1" )
+			bracket = "}";
+
+		// Exiting a context when there's an end-indent
+		if ( token == "indent -1" )
+		{
+			// Prepend newlines so we stay in proper context
+			while ( !l.is_empty() && l.peek() == "\n" )
+				endline = l.pop() ~ endline;
+
+			// We stay in "if" context when else-ing
+			if ( context.front != "if" || !l.is_empty() && l.peek() != "else" )
+				context.removeFront();
+		}
+
+		// Check if there's a block comment coming up
+		if ( !l.is_empty() && ( l.peek() == "#" || l.peek() == "#." ) )
+			return bracket ~ endline ~ block_comment_state( l.pop() );
+		else
+			return bracket ~ endline;
 	}
 
 	/// New line, plus indentation
