@@ -241,7 +241,8 @@ class parser
 			"functions",
 			"conditionals",
 			"arrays",
-			"loops"
+			"loops",
+			"classes"
 		];
 
 		foreach ( test; tests )
@@ -282,6 +283,11 @@ class parser
 					throw new Exception( unexpected( token ) );
 			case "newline":
 				return newline_state( token );
+			case "user type":
+				if ( token == "class" )
+					return token ~ " " ~ class_state( l.pop() );
+				else
+					throw new Exception( unexpected( token ) );
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -321,7 +327,7 @@ class parser
 			}
 		}
 
-		return result ~ endline_state( l.pop() );
+		return result ~ ";" ~ endline_state( l.pop() );
 	}
 
 	/// Default loop state. Form is "for key, item in array"
@@ -479,6 +485,10 @@ class parser
 				start = "pure ";
 				break;
 			case "method":
+				// Methods can only live in classes
+				if ( !canFind( context.opSlice(), "class" ) )
+					throw new Exception( unexpected( "method" ) );
+
 				context.insertFront( "method" );
 				start = "";
 				break;
@@ -765,7 +775,7 @@ class parser
 	string endline_state( string token )
 	{
 		if ( token == "\n" )
-			return ";" ~ endline();
+			return endline();
 		else
 			throw new Exception( expected( "newline", token ) );
 	}
@@ -822,11 +832,23 @@ class parser
 			throw new Exception( expected( "#", token ) );
 
 		result ~= l.pop();
-		string newline = l.pop();
-		if ( newline == "\n" )
-			return result ~ endline();
+
+		return result ~ endline_state( l.pop() );
+	}
+
+	/// Object Orientation!
+	string class_state( string token )
+	{
+		context.insertFront( "class" );
+		if ( identify_token( token ) != "identifier" )
+			throw new Exception( unexpected( token ) );
+
+		if ( l.peek() != ":" )
+			throw new Exception( expected( ":", l.peek() ) );
 		else
-			throw new Exception( expected( "newline", newline ) );
+			l.pop();
+
+		return token ~ endline_state( l.pop() );
 	}
 
 	/// Newlines keep indent and stuff
