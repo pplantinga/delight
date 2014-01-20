@@ -29,23 +29,6 @@ class parser
 	/// Keeps track of the current context
 	SList!string context;
 
-	/// These are used when declaring things.
-	auto attribute_regex = regex( "^(" ~ join( [
-		"abstract",
-		"const",
-		"immutable",
-		"inout",
-		"lazy",
-		"nothrow",
-		"out",
-		"override",
-		"pure",
-		"ref",
-		"shared",
-		"static",
-		"synchronized"
-	], "|" ) ~ ")$" );
-
 	/// Compare and contrast, producing booleans.
 	auto comparator_regex = regex( "^(" ~ join( [
 		"equal to",
@@ -77,19 +60,9 @@ class parser
 
 	/// These do things.
 	auto statement_regex = regex( "^(" ~ join( [
-		"assert",
-		"break",
-		"catch",
-		"continue",
-		"finally",
 		"for",
 		"import",
-		"mixin",
 		"return",
-		"switch",
-		"throw",
-		"try",
-		"typeof",
 		"while"
 	], "|" ) ~ ")$" );
 
@@ -106,11 +79,8 @@ class parser
 
 	/// More complicated types.
 	auto user_type_regex = regex( "^(" ~ join( [
-		"alias",
 		"class",
-		"enum",
-		"struct",
-		"union"
+		"enum"
 	], "|" ) ~ ")$" );
 
 	/**
@@ -127,7 +97,6 @@ class parser
 		/// can only happen inside a function in D
 		symbol_regexes = [
 			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
-			"attribute"           : attribute_regex,
 			"character literal"   : regex( `^'\\?.'$` ),
 			"comparator"          : comparator_regex,
 			"conditional"         : conditional_regex,
@@ -179,7 +148,6 @@ class parser
 		assert( p.identify_token( "+=" ) == "assignment operator" );
 		assert( p.identify_token( "%=" ) == "assignment operator" );
 		assert( p.identify_token( "~=" ) == "assignment operator" );
-		assert( p.identify_token( "pure" ) == "attribute" );
 		assert( p.identify_token( "if" ) == "conditional" );
 		assert( p.identify_token( "else" ) == "conditional" );
 		assert( p.identify_token( "and" ) == "logical" );
@@ -193,7 +161,6 @@ class parser
 		assert( p.identify_token( "->" ) == "punctuation" );
 		assert( p.identify_token( ".." ) == "punctuation" );
 		assert( p.identify_token( "for" ) == "statement" );
-		assert( p.identify_token( "try" ) == "statement" );
 		assert( p.identify_token( "char" ) == "type" );
 		assert( p.identify_token( "string" ) == "type" );
 		assert( p.identify_token( "int" ) == "type" );
