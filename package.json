@@ -1,0 +1,8 @@
+{
+	"name": "delight",
+	"description": "A D preprocessor with Python and Haskell-like syntax",
+	"copyright": "Copyright © 2014, Peter Plantinga",
+	"authors": ["Peter Plantinga"],
+	"dependencies": {
+	}
+}
