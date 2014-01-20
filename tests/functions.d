@@ -12,5 +12,5 @@ void main()
 {
 	int c = add(2, 1);
 	
-	int d = subtract(2, 1);
+	int d = subtract!int(2, 1);
 }

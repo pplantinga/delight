@@ -239,7 +239,7 @@ class lexer
 			`->`,                   // function return
 			`\.\.`,                 // range and slice operator
 			`[+*%/~^-]?=`,          // assignment operators
-			`[.,:\[\]()+*~/%\n^-]`  // punctuation and operators
+			`[.,!:\[\]()+*~/%\n^-]` // punctuation and operators
 		];
 		/// The almighty token regex
 		auto r = regex( join( regexes, "|" ) );

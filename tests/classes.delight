@@ -2,3 +2,17 @@ class test:
 	int myvar = 5
 	method addto( int a ):
 		myvar += a
+
+class another(T):
+	T myvar
+
+	method addto( T a ):
+		myvar += a
+
+procedure main:
+	test a = new test()
+	a.myvar = 6
+	a.addto( 7 )
+	another!int b = new another!int()
+	b.myvar = 8
+	b.addto( 9 )

@@ -136,7 +136,7 @@ class parser
 			"newline"             : regex( `^(\n|indent [+-]1|begin)$` ),
 			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
 			"operator"            : regex( `^[+*%^/~-]$` ),
-			"punctuation"         : regex( `^([.,:()\[\]#]|\.\.|#\.|->)$` ),
+			"punctuation"         : regex( `^([.,!:()\[\]#]|\.\.|#\.|->)$` ),
 			"statement"           : statement_regex,
 			"string literal"      : regex( `^".*"$` ),
 			"template type"       : regex( `^[A-Z]$` ),
@@ -272,10 +272,28 @@ class parser
 				return conditional_state( token );
 			case "type":
 				return token ~ declare_state( l.pop() );
+			case "template type":
+				if ( canFind( context.opSlice(), "template" ) )
+					return token ~ declare_state( l.pop() );
+				else
+					throw new Exception( unexpected( token ) );
 			case "function type":
 				return function_declaration_state( token );
 			case "identifier":
-				return token ~ identifier_state( l.pop() );
+				string result = identifier_state( token );
+				string next = l.pop();
+				// Except for functions, check for assignment
+				if ( result[$-1] != ')'
+						&& identify_token( next ) == "assignment operator" )
+					return result ~ assignment_state( next );
+				else if ( identify_token( next ) == "identifier" )
+					return result ~ " " ~ next ~ class_instance_state( l.pop() );
+				else if ( result[$-1] == ')' && next == "\n" )
+					return result ~ ";" ~ endline_state( next );
+				else if ( next == "\n" )
+					return result ~ endline_state( next );
+				else
+					throw new Exception( unexpected( next ) );
 			case "punctuation":
 				if ( token == "#" || token == "#." )
 					return inline_comment_state( token );
@@ -328,6 +346,15 @@ class parser
 		}
 
 		return result ~ ";" ~ endline_state( l.pop() );
+	}
+
+	/// Assignment state parses operator and expression
+	string assignment_state( string token )
+	{
+		if ( identify_token( token ) != "assignment operator" )
+			throw new Exception( unexpected( token ) );
+		
+		return " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
 	}
 
 	/// Default loop state. Form is "for key, item in array"
@@ -465,8 +492,9 @@ class parser
 		switch ( identify_token( token ) )
 		{
 			case "assignment operator":
-				return result ~ " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
-			case "\n":
+				return result ~ assignment_state( token );
+
+			case "newline":
 				return result ~ ";" ~ endline();
 			default:
 				throw new Exception( unexpected( token ) );
@@ -485,8 +513,9 @@ class parser
 				start = "pure ";
 				break;
 			case "method":
-				// Methods can only live in classes
-				if ( !canFind( context.opSlice(), "class" ) )
+				// Methods can only live in classes and templates
+				if ( !canFind( context.opSlice(), "class" ) 
+						&& !canFind( context.opSlice(), "template" ) )
 					throw new Exception( unexpected( "method" ) );
 
 				context.insertFront( "method" );
@@ -588,34 +617,53 @@ class parser
 		return type;
 	}
 
-	/// Determine if we're calling a function or assigning to a varible
+	/// Determine what kind of variable this is. 
 	string identifier_state( string token )
 	{
-		switch ( identify_token( token ) )
+		if ( identify_token( token ) != "identifier" )
+			throw new Exception( unexpected( token ) );
+
+		string identifier = token;
+
+		if ( identify_token( l.peek() ) == "punctuation" && l.peek() != ":" )
 		{
-			case "punctuation":
-				// calling a function
-				if ( token == "(" )
-				{
-					return token ~ function_call_state( l.pop() ) ~ ";";
-				}
-				// array
-				else if ( token == "[" )
-				{
-					string array = array_state( token );
-					return array ~ identifier_state( l.pop() );
-				}
-				else
-				{
-					throw new Exception( unexpected( token ) );
-				}
+			token = l.pop();
+			switch ( token )
+			{
+				// Function call
+				case "(":
+					identifier ~= token ~ function_call_state( l.pop() );
+					break;
+				
+				// Array access
+				case "[":
+					identifier ~= array_state( token );
+					break;
 			
-			// assigning a variable
-			case "assignment operator":
-				return " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
-			default:
-				throw new Exception( unexpected( token ) );
+				// template instance
+				case "!":
+					if ( identify_token( l.peek() ) != "type" )
+						throw new Exception( unexpected( l.peek() ) );
+
+					identifier ~= token ~ l.pop();
+					if ( l.peek() == "(" )
+					{
+						identifier ~= l.pop();
+						identifier ~= function_call_state( l.pop() );
+					}
+					break;
+			
+				// class member
+				case ".":
+					identifier ~= token ~ identifier_state( l.pop() );
+					break;
+
+				default:
+					throw new Exception( unexpected( token ) );
+			}
 		}
+
+		return identifier;
 	}
 
 	/// Parses arguments to a function
@@ -694,16 +742,7 @@ class parser
 				expression = token;
 				break;
 			case "identifier":
-				expression = token;
-				if ( l.peek() == "(" )
-				{
-					l.pop();
-					expression ~= "(" ~ function_call_state( l.pop() );
-				}
-				else if ( l.peek() == "[" )
-				{
-					expression ~= array_state( l.pop() );
-				}
+				expression = identifier_state( token );
 				break;
 			case "punctuation":
 				// sub-expression in parentheses
@@ -843,13 +882,79 @@ class parser
 		if ( identify_token( token ) != "identifier" )
 			throw new Exception( unexpected( token ) );
 
+		string result = token;
+
+		if ( l.peek() == "(" )
+		{
+			// This isn't a class, it's a template!
+			context.removeFront();
+			context.insertFront( "template" );
+			result ~= l.pop();
+
+			if ( identify_token( l.peek() ) == "template type" )
+				result ~= l.pop();
+
+			while ( l.peek() == "," )
+			{
+				result ~= l.pop();
+
+				if ( identify_token( l.peek() ) != "template type" )
+					throw new Exception( unexpected( l.peek() ) );
+
+				result ~= l.pop();
+			}
+
+			if ( l.peek() != ")" )
+				throw new Exception( unexpected( l.peek() ) );
+
+			result ~= l.pop();
+		}
+			
 		if ( l.peek() != ":" )
 			throw new Exception( expected( ":", l.peek() ) );
 		else
 			l.pop();
 
-		return token ~ endline_state( l.pop() );
+		return result ~ endline_state( l.pop() );
 	}
+
+	string class_instance_state( string token )
+	{
+		if ( token != "=" )
+			throw new Exception( expected( "=", token ) );
+
+		if ( l.peek() != "new" )
+			throw new Exception( expected( "new", l.peek() ) );
+
+		string result = " " ~ token ~ " " ~ l.pop();
+
+		if ( identify_token( l.peek() ) != "identifier" )
+			throw new Exception( unexpected( l.peek() ) );
+
+		result ~= " " ~ l.pop();
+
+		// template instance
+		if ( l.peek() == "!" )
+		{
+			result ~= l.pop();
+
+			if ( identify_token( l.peek() ) != "type" )
+				throw new Exception( unexpected( l.peek() ) );
+			
+			result ~= l.pop();
+		}
+
+		if ( l.peek() != "(" )
+			throw new Exception( expected( "(", l.peek() ) );
+		
+		result ~= "(" ~ parse_args( l.pop() );
+
+		if ( l.peek() != ")" )
+			throw new Exception( expected( ")", l.peek() ) );
+
+		return result ~ l.pop() ~ ";";
+	}
+
 
 	/// Newlines keep indent and stuff
 	string newline_state( string token )
