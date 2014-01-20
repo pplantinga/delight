@@ -10,16 +10,22 @@ Delightful Features
 
 Let's start with some example code, and then we can analyze it.
 
-	function add: int a, b -> int
+	function add(int a, b -> int):
 		return a + b
 
 	procedure main:
-		array = [ 1, 2, 3 ]
-		foreach element in array:
-			if element less than 2 and element greater than 0:
+
+		int[] array = [ 1, 2, 3 ]
+		for element in array:
+
+			if element less than 2 and element not less than 0:
 				writeln( add( element, 4 ) )
-			else:
+
+			else if element equal to 3:
 				writeln( add( element, -2 ) )
+
+			else:
+				writeln( add( element, 5 ) )
 
 In delight, as in python, scope is determined by indentation. You can indent with spaces or tabs, but it must be consistent throughout the file.
 
@@ -27,8 +33,8 @@ Delight is strongly typed, like D, but can do type inference using the D keyword
 
 Functions are like mathematical functions, they don't have side-effects. Procedures don't return anything. And methods are part of a class definition, and thus make some change to the class internals. I'm still looking for a good term for something that has side-effects and returns something...
 
-Like python, delight leans towards using keywords over symbols. Examples: in, less than, and, equals, etc. The exceptions are operators and some punctuation, like "," "->" "[" "+=" "^" etc.
+Like python, delight leans towards using keywords over symbols. Examples: in, less than, and, equal to, etc. The exceptions are operators and some punctuation, like "," "->" "[" "+=" "^" etc. Every operator with = in it is an assignment operator.
 
-Loops and conditionals end in ":"
+Function definitions, loops, class definitions, conditionals, and pretty much everything that increases the indent ends in ":".
 
 The language as it stands here is subject to expansion and change, it's still in it's infancy. I'll keep a list here of the keywords and what they do once they solidify a bit more.
