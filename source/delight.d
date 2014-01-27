@@ -17,26 +17,48 @@
 module delight;
 
 import delight.parser;
-import std.stdio : writeln, File;
-import std.algorithm : endsWith;
+import std.stdio;
+import std.algorithm;
+import std.process;
+import std.array;
 
 void main( string args[] )
 {
 	// Check for appropriate arguments
 	if ( args.length < 2 || !endsWith( args[1], ".delight" ) )
 	{
-		writeln( "Usage: delight [file.delight]" );
+		writeln( "Usage: delight [<files>] [-- <dmd arguments>]" );
 		return;
 	}
 
-	/// Parse the input file
-	auto p = new Parser( args[1] );
-	string result = p.parse();
-	
-	/// Extract output filename by removing last 6 chars: test.d*elight*
-	string filename = args[1][0 .. $-6];
-	auto w = File( filename, "w" );
+	/// Parse the input files
+	auto files = args[1 .. $].until("--");
+	string[] dmd_args = ["dmd"];
+	foreach ( file; files )
+	{		
+		/// Extract output filename by removing last 6 chars: test.d*elight*
+		string filename = file[0 .. $-6];
+		auto w = File( filename, "w" );
 
-	// Write the results to the new file
-	w.write( result );
+		// Append the filename to the compilation command
+		dmd_args ~= filename;
+
+		// Parse the file
+		auto p = new Parser( file );
+		string result = p.parse();
+
+		// Write the results to the new file
+		w.write( result );
+		w.close();
+	}
+
+	// Pass arguments through
+	if ( canFind( args, "--" ) )
+		dmd_args ~= args[ dmd_args.length + 1 .. $ ];
+	
+	// Call DMD
+	writeln( "Executing: ", join( dmd_args, " " ) );
+	auto dmd = execute( dmd_args );
+	if ( dmd.status != 0 )
+		writeln( "Compilation failed:\n ", dmd.output );
 }
