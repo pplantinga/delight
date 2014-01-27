@@ -8,12 +8,14 @@
  * - reads the file line by line
  * - produces tokens, such as "asdf" "1.2" "+" "foreach" etc.
  */
+module delight.lexer;
+
 import std.stdio : writeln, File;
 import std.regex;
 import std.container : DList;
 import std.array : join;
 
-class lexer
+class Lexer
 {
 	static immutable MAX_INDENT = 10000;
 	int line_number;
@@ -50,7 +52,7 @@ class lexer
 	unittest
 	{
 		writeln( "Lexing indent test" );
-		lexer l1 = new lexer( "tests/indent.delight" );
+		auto l1 = new Lexer( "tests/indent.delight" );
 		assert( l1.indentation == "\t" );
 		assert( !l1.is_empty() );
 		assert( l1.pop() == "begin" );

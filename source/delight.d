@@ -14,9 +14,11 @@
  * ----------------
  * to create an executable.
  */
+module delight;
+
+import delight.parser;
 import std.stdio : writeln, File;
 import std.algorithm : endsWith;
-import parser;
 
 void main( string args[] )
 {
@@ -28,7 +30,7 @@ void main( string args[] )
 	}
 
 	/// Parse the input file
-	parser p = new parser( args[1] );
+	auto p = new Parser( args[1] );
 	string result = p.parse();
 	
 	/// Extract output filename by removing last 6 chars: test.d*elight*

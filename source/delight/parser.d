@@ -9,7 +9,9 @@
  * - checks for syntax errors in the source code
  * - generates valid d code
  */
-import lexer;
+module delight.parser;
+
+import delight.lexer;
 import std.conv : to;
 import std.stdio : writeln;
 import std.range : repeat;
@@ -18,10 +20,10 @@ import std.string;
 import std.algorithm : canFind;
 import std.container : SList;
 
-class parser
+class Parser
 {
 	/// Breaks source code into tokens
-	lexer l;
+	Lexer l;
 
 	/// Stores regexes for determining what tokens are
 	Regex!char[string] symbol_regexes;
@@ -91,7 +93,7 @@ class parser
 	this( string filename )
 	{
 		/// Lexer parses source into tokens
-		l = new lexer( filename );
+		l = new Lexer( filename );
 
 		/// Unfortunately, associative array literals
 		/// can only happen inside a function in D
@@ -133,7 +135,7 @@ class parser
 	unittest
 	{
 		writeln( "identify_token import" );
-		parser p = new parser( "tests/import.delight" );
+		auto p = new Parser( "tests/import.delight" );
 		assert( p.identify_token( "\n" ) == "newline" );
 		assert( p.identify_token( "indent -1" ) == "newline" );
 		assert( p.identify_token( "begin" ) == "newline" );
@@ -215,7 +217,7 @@ class parser
 		foreach ( test; tests )
 		{
 			writeln( "Parsing " ~ test ~ " test" );
-			parser p = new parser( "tests/" ~ test ~ ".delight" );
+			auto p = new Parser( "tests/" ~ test ~ ".delight" );
 			auto result = read( "tests/" ~ test ~ ".d" );
 			assert( p.parse() == result );
 		}
