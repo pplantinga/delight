@@ -30,8 +30,15 @@ syn keyword delightOperator      and in is not or more less than equal to
 "
 " Comments
 "
+" Block comments work only with tabs and up to 3 levels. It will take someone
+" more experienced than me to make a more general whitespace-indented comment.
+"
 
 syn match   delightComment	"#.*$" display contains=delightTodo
+syn region  delightComment  start="^#" end="^[^\t ]"me=e-1 display contains=delightTodo
+syn region  delightComment  start="^\t#" end="^\t\?[^\t]"me=e-1 display contains=delightTodo
+syn region  delightComment  start="^\t\t#" end="^\t\{0,2}[^\t]"me=e-1 display contains=delightTodo
+syn region  delightComment  start="^\t\t\t#" end="^\t\{0,3}[^\t]"me=e-1 display contains=delightTodo
 syn keyword delightTodo contained TODO FIXME TEMP REFACTOR REVIEW HACK BUG XXX
 
 " Mixing spaces and tabs also may be used for pretty formatting multiline
