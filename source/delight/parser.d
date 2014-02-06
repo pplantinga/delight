@@ -154,6 +154,11 @@ class Parser
 		assert( p.identify_token( "else" ) == "conditional" );
 		assert( p.identify_token( "and" ) == "logical" );
 		assert( p.identify_token( "less than" ) == "comparator" );
+		assert( p.identify_token( "not" ) == "comparator" );
+		assert( p.identify_token( "equal to" ) == "comparator" );
+		assert( p.identify_token( "function" ) == "function type" );
+		assert( p.identify_token( "method" ) == "function type" );
+		assert( p.identify_token( "procedure" ) == "function type" );
 		assert( p.identify_token( "-" ) == "operator" );
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
