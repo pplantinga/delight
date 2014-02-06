@@ -508,11 +508,7 @@ class Parser
 		if ( l.peek() == "(" )
 		{
 			args = parse_args( l.pop() );
-			return_type = parse_return_type( l.pop );
-
-			// Procedures have no return type
-			if ( !return_type && context.front != "procedure" )
-				return_type = "auto";
+			return_type = parse_return_type( l.pop() );
 		}
 		
 		// Function declarations must end with colon
@@ -544,6 +540,10 @@ class Parser
 
 			string type = l.pop();
 
+			// Add ref to procedures
+			if ( context.front == "procedure" )
+				type = "ref " ~ type;
+
 			// For each identifier we encounter
 			while ( identify_token( l.peek() ) == "identifier" )
 			{
@@ -565,6 +565,10 @@ class Parser
 	/// Parse return type. If none, return auto
 	string parse_return_type( string token )
 	{
+		// procedures have no return type
+		if ( context.front == "procedure" )
+			return "";
+
 		// no return type, guess
 		if ( token == ")" )
 			return "auto";
