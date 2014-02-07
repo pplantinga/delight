@@ -1,0 +1,9 @@
+procedure main:
+	int a
+	int b
+	try:
+		a = b + 1
+	except Exception e:
+		a = b + 2
+	finally:
+		a = b + 3

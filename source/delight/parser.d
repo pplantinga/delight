@@ -47,6 +47,13 @@ class Parser
 		"else"
 	], "|" ) ~ ")$" );
 
+	/// Exception handling
+	auto exception_regex = regex( "^(" ~ join( [
+		"try",
+		"except",
+		"finally"
+	], "|" ) ~ ")$" );
+
 	/// Function types.
 	auto function_type_regex = regex( "^(" ~ join( [
 		"function",
@@ -102,6 +109,7 @@ class Parser
 			"character literal"   : regex( `^'\\?.'$` ),
 			"comparator"          : comparator_regex,
 			"conditional"         : conditional_regex,
+			"exception"           : exception_regex,
 			"function type"       : function_type_regex,
 			"logical"             : logical_regex,
 			"newline"             : regex( `^(\n|indent [+-]1|begin)$` ),
@@ -156,6 +164,8 @@ class Parser
 		assert( p.identify_token( "less than" ) == "comparator" );
 		assert( p.identify_token( "not" ) == "comparator" );
 		assert( p.identify_token( "equal to" ) == "comparator" );
+		assert( p.identify_token( "try" ) == "exception" );
+		assert( p.identify_token( "except" ) == "exception" );
 		assert( p.identify_token( "function" ) == "function type" );
 		assert( p.identify_token( "method" ) == "function type" );
 		assert( p.identify_token( "procedure" ) == "function type" );
@@ -216,6 +226,7 @@ class Parser
 			"conditionals",
 			"arrays",
 			"loops",
+			"exceptions",
 			"classes"
 		];
 
@@ -280,6 +291,8 @@ class Parser
 					return token ~ " " ~ class_state( l.pop() );
 				else
 					throw new Exception( unexpected( token ) );
+			case "exception":
+				return exception_state( token );
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -957,8 +970,11 @@ class Parser
 			while ( !l.is_empty() && l.peek() == "\n" )
 				endline = l.pop() ~ endline;
 
-			// We stay in "if" context when else-ing
-			if ( context.front != "if" || !l.is_empty() && l.peek() != "else" )
+			// Unless going to "else", "except", or "finally" drop out of context
+			if ( l.is_empty()
+					|| l.peek() != "else"
+					&& l.peek() != "except"
+					&& l.peek() != "finally" )
 				context.removeFront();
 		}
 
@@ -967,6 +983,30 @@ class Parser
 			return bracket ~ endline ~ block_comment_state( l.pop() );
 		else
 			return bracket ~ endline;
+	}
+
+	string exception_state( string token )
+	{
+		string exception = token;
+
+		string next = l.pop();
+
+		if ( token == "try" )
+			context.insertFront( "try" );
+		else if ( token == "except" && context.front == "try" )
+			exception = "catch (" ~ next ~ " " ~ l.pop() ~ ")";
+		else if ( token == "finally" && context.front == "try" )
+			exception = "finally";
+		else
+			throw new Exception( unexpected( token ) );
+
+		if ( token == "except" )
+			next = l.pop();
+
+		if ( next != ":" )
+			throw new Exception( expected( ":", next ) );
+
+		return exception;
 	}
 
 	/// New line, plus indentation

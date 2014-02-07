@@ -24,7 +24,7 @@ syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while
 syn keyword delightConditional   if else
 syn keyword delightImport        import
-syn keyword delightException     try catch finally
+syn keyword delightException     try except finally
 syn keyword delightOperator      and in is not or more less than equal to
 
 "
