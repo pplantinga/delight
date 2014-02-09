@@ -69,6 +69,8 @@ class Parser
 
 	/// These do things.
 	auto statement_regex = regex( "^(" ~ join( [
+		"break",
+		"continue",
 		"for",
 		"import",
 		"return",
@@ -251,8 +253,14 @@ class Parser
 					return "foreach (" ~ foreach_state( l.pop() ) ~ ")";
 				else if ( token == "while" )
 					return "while (" ~ while_state( l.pop() ) ~ ")";
+				else if ( token == "return" )
+					return return_state( token );
+				else if ( ( token == "break" || token == "continue" )
+						&& !canFind( context.opSlice(), "for" )
+						&& !canFind( context.opSlice(), "while" ) )
+					throw new Exception( unexpected( token ) );
 				else
-					return token ~ " " ~ expression_state( l.pop() ) ~ ";";
+					return token ~ ";";
 			case "conditional":
 				return conditional_state( token );
 			case "type":
@@ -347,7 +355,7 @@ class Parser
 	/// Default loop state. Form is "for key, item in array"
 	string foreach_state( string token )
 	{
-		context.insertFront( "foreach" );
+		context.insertFront( "for" );
 		if ( identify_token( token ) != "identifier" )
 			throw new Exception( unexpected( token ) );
 
@@ -393,6 +401,7 @@ class Parser
 		return result;
 	}
 
+	/// Generic loop
 	string while_state( string token )
 	{
 		context.insertFront( "while" );
@@ -405,6 +414,15 @@ class Parser
 		l.pop();
 
 		return expression;
+	}
+
+	/// return statement
+	string return_state( string token )
+	{
+		if ( l.peek() == "\n" )
+			return token ~ ";";
+		else
+			return token ~ " " ~ expression_state( l.pop() ) ~ ";";
 	}
 
 	/// Control branching

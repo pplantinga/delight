@@ -10,6 +10,10 @@ void main()
 	foreach (j; 0 .. 5)
 	{
 		i -= j;
+		if (i < 0)
+		{
+			break;
+		}
 	}
 
 	while (i < 10)

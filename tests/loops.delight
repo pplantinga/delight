@@ -6,6 +6,8 @@ procedure main:
 
 	for j in 0 .. 5:
 		i -= j
+		if i less than 0:
+			break
 
 	while i less than 10:
 		i *= 2
