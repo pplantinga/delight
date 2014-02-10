@@ -69,11 +69,13 @@ class Parser
 
 	/// These do things.
 	auto statement_regex = regex( "^(" ~ join( [
+		"assert",
 		"break",
 		"continue",
 		"for",
 		"import",
 		"return",
+		"unittest",
 		"while"
 	], "|" ) ~ ")$" );
 
@@ -229,6 +231,7 @@ class Parser
 			"arrays",
 			"loops",
 			"exceptions",
+			"unittests",
 			"classes"
 		];
 
@@ -247,20 +250,7 @@ class Parser
 		switch ( identify_token( token ) )
 		{
 			case "statement":
-				if ( token == "import" )
-					return token ~ " " ~ library_state( l.pop() );
-				else if ( token == "for" )
-					return "foreach (" ~ foreach_state( l.pop() ) ~ ")";
-				else if ( token == "while" )
-					return "while (" ~ while_state( l.pop() ) ~ ")";
-				else if ( token == "return" )
-					return return_state( token );
-				else if ( ( token == "break" || token == "continue" )
-						&& !canFind( context.opSlice(), "for" )
-						&& !canFind( context.opSlice(), "while" ) )
-					throw new Exception( unexpected( token ) );
-				else
-					return token ~ ";";
+				return statement_state( token );
 			case "conditional":
 				return conditional_state( token );
 			case "type":
@@ -301,6 +291,37 @@ class Parser
 					throw new Exception( unexpected( token ) );
 			case "exception":
 				return exception_state( token );
+			default:
+				throw new Exception( unexpected( token ) );
+		}
+	}
+
+	string statement_state( string token )
+	{
+		switch ( token )
+		{
+			case "import":
+				return token ~ " " ~ library_state( l.pop() );
+			case "for":
+				return "foreach (" ~ foreach_state( l.pop() ) ~ ")";
+			case "while":
+				return "while (" ~ while_state( l.pop() ) ~ ")";
+			case "return":
+				return return_state( token );
+			case "assert":
+				return token ~ "(" ~ expression_state( l.pop() ) ~ ");";
+			case "unittest":
+				if ( l.peek() != ":" )
+					throw new Exception( expected( ":", l.peek() ) );
+				l.pop();
+				return token;
+			case "break":
+			case "continue":
+				if ( !canFind( context.opSlice(), "for" )
+						&& !canFind( context.opSlice(), "while" ) )
+					throw new Exception( unexpected( token ) );
+				else
+					return token ~ ";";
 			default:
 				throw new Exception( unexpected( token ) );
 		}

@@ -19,6 +19,7 @@ endfunction
 " Keywords
 "
 
+syn keyword delightDebug         unittest assert
 syn keyword delightStatement     break continue return
 syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while
@@ -116,6 +117,7 @@ syn keyword delightBoolean TRUE FALSE
 " Defs
 "
 
+hi def link delightDebug            Statement
 hi def link delightStatement        Statement
 hi def link delightImport           Include
 hi def link delightFunction         Function

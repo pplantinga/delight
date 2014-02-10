@@ -1,0 +1,9 @@
+function add( int a, b ):
+	return a + b
+
+unittest:
+	assert add( 1, 2 ) equal to 3
+	assert add( 0, 0 ) less than 1
+
+procedure main:
+	int c = add( 3, 4 )
