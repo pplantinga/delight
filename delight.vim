@@ -19,7 +19,7 @@ endfunction
 " Keywords
 "
 
-syn keyword delightDebug         unittest assert
+syn keyword delightDebug         unittest assert raise
 syn keyword delightStatement     break continue return
 syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while

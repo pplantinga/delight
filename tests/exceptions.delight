@@ -3,6 +3,7 @@ procedure main:
 	int b
 	try:
 		a = b + 1
+		raise "This is an exception"
 	except Exception e:
 		a = b + 2
 	finally:

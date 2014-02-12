@@ -74,6 +74,7 @@ class Parser
 		"continue",
 		"for",
 		"import",
+		"raise",
 		"return",
 		"unittest",
 		"while"
@@ -322,6 +323,11 @@ class Parser
 					throw new Exception( unexpected( token ) );
 				else
 					return token ~ ";";
+			case "raise":
+				if ( identify_token( l.peek() ) == "string literal" )
+					return "throw new Exception(" ~ l.pop() ~ ");";
+				else
+					return "throw " ~ expression_state( l.pop() ) ~ ";";
 			default:
 				throw new Exception( unexpected( token ) );
 		}

@@ -5,6 +5,7 @@ void main()
 	try
 	{
 		a = b + 1;
+		throw new Exception("This is an exception");
 	}
 	catch (Exception e)
 	{
