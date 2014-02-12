@@ -117,7 +117,7 @@ class Parser
 			"exception"           : exception_regex,
 			"function type"       : function_type_regex,
 			"logical"             : logical_regex,
-			"newline"             : regex( `^(\n|indent [+-]1|begin)$` ),
+			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
 			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
 			"operator"            : regex( `^[+*%^/~-]$` ),
 			"punctuation"         : regex( `^([.,!:()\[\]#]|\.\.|#\.|->)$` ),
@@ -150,7 +150,7 @@ class Parser
 		writeln( "identify_token import" );
 		auto p = new Parser( "tests/import.delight" );
 		assert( p.identify_token( "\n" ) == "newline" );
-		assert( p.identify_token( "indent -1" ) == "newline" );
+		assert( p.identify_token( "dedent" ) == "newline" );
 		assert( p.identify_token( "begin" ) == "newline" );
 		assert( p.identify_token( `""` ) == "string literal" );
 		assert( p.identify_token( `"string"` ) == "string literal" );
@@ -869,7 +869,7 @@ class Parser
 		else if ( token == "#." )
 			result = "/++" ~ result;
 
-		if ( l.peek() == "indent +1" )
+		if ( l.peek() == "indent" )
 		{
 			l.pop();
 			string inside;
@@ -883,9 +883,9 @@ class Parser
 				token = l.pop();
 				if ( token == "\n" )
 					result ~= "\n" ~ indent ~ " +";
-				else if ( token == "indent +1" )
+				else if ( token == "indent" )
 					level += 1;
-				else if ( token == "indent -1" )
+				else if ( token == "dedent" )
 					level -= 1;
 				else
 					result ~= " " ~ inside ~ token;
@@ -1003,13 +1003,13 @@ class Parser
 
 		// Don't use a bracket if token is 'begin' or 'newline' 
 		string bracket = "";
-		if ( token == "indent +1" )
+		if ( token == "indent" )
 			bracket = "{";
-		else if ( token == "indent -1" )
+		else if ( token == "dedent" )
 			bracket = "}";
 
 		// Exiting a context when there's an end-indent
-		if ( token == "indent -1" )
+		if ( token == "dedent" )
 		{
 			// Prepend newlines so we stay in proper context
 			while ( !l.is_empty() && l.peek() == "\n" )
@@ -1061,7 +1061,7 @@ class Parser
 
 		// Since the indentation level doesn't get changed till after
 		// the pop, we'll need to shift the indentation here
-		if ( !l.is_empty() && l.peek() == "indent -1" )
+		if ( !l.is_empty() && l.peek() == "dedent" )
 			level -= 1;
 		
 		return "\n" ~ join( repeat( l.indentation, level ) );

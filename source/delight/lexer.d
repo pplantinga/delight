@@ -61,7 +61,7 @@ class Lexer
 		assert( l1.pop() == "main" );
 		assert( l1.pop() == ":" );
 		assert( l1.pop() == "\n" );
-		assert( l1.pop() == "indent +1" );
+		assert( l1.pop() == "indent" );
 		assert( l1.pop() == "function" );
 		assert( l1.pop() == "add" );
 		assert( l1.pop() == "(" );
@@ -74,7 +74,7 @@ class Lexer
 		assert( l1.pop() == ")" );
 		assert( l1.pop() == ":" );
 		assert( l1.pop() == "\n" );
-		assert( l1.pop() == "indent +1" );
+		assert( l1.pop() == "indent" );
 		assert( l1.pop() == "int" );
 		assert( l1.pop() == "c" );
 		assert( l1.pop() == "=" );
@@ -86,7 +86,7 @@ class Lexer
 		assert( l1.pop() == "return" );
 		assert( l1.pop() == "c" );
 		assert( l1.pop() == "\n" );
-		assert( l1.pop() == "indent -1" );
+		assert( l1.pop() == "dedent" );
 		assert( l1.pop() == "\n" );
 		assert( l1.pop() == "int" );
 		assert( l1.pop() == "c" );
@@ -109,7 +109,7 @@ class Lexer
 		assert( l1.pop() == "2" );
 		assert( l1.pop() == ")" );
 		assert( l1.pop() == "\n" );
-		assert( l1.pop() == "indent -1" );
+		assert( l1.pop() == "dedent" );
 		assert( l1.pop() == "" );
 		assert( l1.is_empty() );
 	}
@@ -133,9 +133,9 @@ class Lexer
 			this.tokenize_line();
 
 		// If this is an indentation token, adjust
-		if ( token == "indent +1" )
+		if ( token == "indent" )
 			indentation_level += 1;
-		else if ( token == "indent -1" && indentation_level > 0 )
+		else if ( token == "dedent" && indentation_level > 0 )
 			indentation_level -= 1;
 		
 		return token;
@@ -185,12 +185,12 @@ class Lexer
 		int end;
 		if ( level < indentation_level )
 		{
-			token = "indent -1";
+			token = "dedent";
 			end = indentation_level - level;
 		}
 		else if ( level > indentation_level )
 		{
-			token = "indent +1";
+			token = "indent";
 			end = level - indentation_level;
 		}
 
