@@ -1,5 +1,5 @@
-import std.stdio: writeln, File;
+import io = std.stdio : print = writeln, File;
 void main()
 {
-	writeln("Hello, world!");
+	print("Hello, world!");
 }

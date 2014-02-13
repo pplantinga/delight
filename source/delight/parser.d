@@ -61,6 +61,13 @@ class Parser
 		"procedure"
 	], "|" ) ~ ")$" );
 
+	/// For imports
+	auto library_regex = regex( "^(" ~ join( [
+		"as",
+		"from",
+		"import"
+	], "|" ) ~ ")$" );
+
 	/// join comparisons
 	auto logical_regex = regex( "^(" ~ join( [
 		"and",
@@ -73,7 +80,6 @@ class Parser
 		"break",
 		"continue",
 		"for",
-		"import",
 		"raise",
 		"return",
 		"unittest",
@@ -116,6 +122,7 @@ class Parser
 			"conditional"         : conditional_regex,
 			"exception"           : exception_regex,
 			"function type"       : function_type_regex,
+			"library"             : library_regex,
 			"logical"             : logical_regex,
 			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
 			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
@@ -165,7 +172,6 @@ class Parser
 		assert( p.identify_token( "~=" ) == "assignment operator" );
 		assert( p.identify_token( "if" ) == "conditional" );
 		assert( p.identify_token( "else" ) == "conditional" );
-		assert( p.identify_token( "and" ) == "logical" );
 		assert( p.identify_token( "less than" ) == "comparator" );
 		assert( p.identify_token( "not" ) == "comparator" );
 		assert( p.identify_token( "equal to" ) == "comparator" );
@@ -174,6 +180,9 @@ class Parser
 		assert( p.identify_token( "function" ) == "function type" );
 		assert( p.identify_token( "method" ) == "function type" );
 		assert( p.identify_token( "procedure" ) == "function type" );
+		assert( p.identify_token( "import" ) == "library" );
+		assert( p.identify_token( "from" ) == "library" );
+		assert( p.identify_token( "and" ) == "logical" );
 		assert( p.identify_token( "-" ) == "operator" );
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
@@ -250,6 +259,8 @@ class Parser
 	{
 		switch ( identify_token( token ) )
 		{
+			case "library":
+				return library_state( token );
 			case "statement":
 				return statement_state( token );
 			case "conditional":
@@ -301,8 +312,6 @@ class Parser
 	{
 		switch ( token )
 		{
-			case "import":
-				return token ~ " " ~ library_state( l.pop() );
 			case "for":
 				return "foreach (" ~ foreach_state( l.pop() ) ~ ")";
 			case "while":
@@ -336,39 +345,87 @@ class Parser
 	/// This state takes care of stuff after an import
 	string library_state( string token )
 	{
+		/// If this is a selective import
+		bool selective = token == "from";
+
+		string library;
+		if ( token == "import" || token == "from" )
+			library = parse_library( l.pop() );
+		else
+			throw new Exception( unexpected( token ) );
+
+		/// Renamed library
+		if ( l.peek() == "as" )
+		{
+			l.pop();
+			string join = " = ";
+			
+			if ( identify_token( l.peek() ) != "identifier" )
+				throw new Exception( unexpected( l.peek() ) );
+
+			library = l.pop() ~ join ~ library;
+		}
+
+		// Selective imports
+		string parts;
+		if ( selective )
+		{
+			if ( l.peek() != "import" )
+				throw new Exception( expected( "import", l.peek() ) );
+
+			l.pop();
+			parts = " : ";
+			
+			string part;
+			while ( l.peek() != "\n" )
+			{
+				if ( identify_token( l.peek() ) == "identifier" )
+					part = l.pop();
+				else
+					throw new Exception( unexpected( l.peek() ) );
+
+				// Renamed import
+				if ( l.peek() == "as" )
+				{
+					l.pop();
+					if ( identify_token( l.peek() ) != "identifier" )
+						throw new Exception( unexpected( l.peek() ) );
+
+					part = l.pop() ~ " = " ~ part;
+				}
+
+				// Additional import
+				if ( l.peek() == "," )
+					part ~= l.pop() ~ " ";
+
+				parts ~= part;
+			}
+		}
+
+		return "import " ~ library ~ parts ~ ";";
+	}
+
+	/// Parse foo.bar.baz type libraries
+	string parse_library( string token )
+	{
 		if ( identify_token( token ) != "identifier" )
 			throw new Exception( unexpected( token ) );
 
-		string result = token;
+		string library = token;
 
 		while ( l.peek() == "." )
 		{
-			result ~= l.pop();
+			library ~= l.pop();
 
 			if ( identify_token( l.peek() ) != "identifier" )
 				throw new Exception( unexpected( token ) );
 
-			result ~= l.pop();
+			library ~= l.pop();
 		}
 
-		if ( l.peek() == ":" )
-		{
-			result ~= l.pop() ~ " ";
-			
-			while ( l.peek() != "\n" )
-			{
-				if ( identify_token( l.peek() ) == "identifier" )
-					result ~= l.pop();
-				else
-					throw new Exception( unexpected( l.peek() ) );
-
-				if ( l.peek() == "," )
-					result ~= l.pop() ~ " ";
-			}
-		}
-
-		return result ~ ";" ~ endline_state( l.pop() );
+		return library;
 	}
+
 
 	/// Assignment state parses operator and expression
 	string assignment_state( string token )
