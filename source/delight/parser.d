@@ -254,6 +254,20 @@ class Parser
 		}
 	}
 
+	/// Check if this token is right
+	void check_token( string check, string token )
+	{
+		if ( check != token )
+			throw new Exception( expected( token, check ) );
+	}
+
+	/// Check if this token is the right type
+	void check_token_type( string check, string type )
+	{
+		if ( identify_token( check ) != type )
+			throw new Exception( unexpected( check ) );
+	}
+
 	/// The starting state for the parser
 	string start_state( string token )
 	{
@@ -321,9 +335,7 @@ class Parser
 			case "assert":
 				return token ~ "(" ~ expression_state( l.pop() ) ~ ");";
 			case "unittest":
-				if ( l.peek() != ":" )
-					throw new Exception( expected( ":", l.peek() ) );
-				l.pop();
+				check_token( l.pop(), ":" );
 				return token;
 			case "break":
 			case "continue":
@@ -360,8 +372,7 @@ class Parser
 			l.pop();
 			string join = " = ";
 			
-			if ( identify_token( l.peek() ) != "identifier" )
-				throw new Exception( unexpected( l.peek() ) );
+			check_token_type( l.peek(), "identifier" );
 
 			library = l.pop() ~ join ~ library;
 		}
@@ -370,27 +381,21 @@ class Parser
 		string parts;
 		if ( selective )
 		{
-			if ( l.peek() != "import" )
-				throw new Exception( expected( "import", l.peek() ) );
+			check_token( l.pop(), "import" );
 
-			l.pop();
 			parts = " : ";
 			
 			string part;
 			while ( l.peek() != "\n" )
 			{
-				if ( identify_token( l.peek() ) == "identifier" )
-					part = l.pop();
-				else
-					throw new Exception( unexpected( l.peek() ) );
+				check_token_type( l.peek(), "identifier" );
+				part = l.pop();
 
 				// Renamed import
 				if ( l.peek() == "as" )
 				{
 					l.pop();
-					if ( identify_token( l.peek() ) != "identifier" )
-						throw new Exception( unexpected( l.peek() ) );
-
+					check_token_type( l.peek(), "identifier" );
 					part = l.pop() ~ " = " ~ part;
 				}
 
@@ -408,18 +413,14 @@ class Parser
 	/// Parse foo.bar.baz type libraries
 	string parse_library( string token )
 	{
-		if ( identify_token( token ) != "identifier" )
-			throw new Exception( unexpected( token ) );
+		check_token_type( token, "identifier" );
 
 		string library = token;
 
 		while ( l.peek() == "." )
 		{
 			library ~= l.pop();
-
-			if ( identify_token( l.peek() ) != "identifier" )
-				throw new Exception( unexpected( token ) );
-
+			check_token_type( token, "identifier" );
 			library ~= l.pop();
 		}
 
@@ -430,8 +431,7 @@ class Parser
 	/// Assignment state parses operator and expression
 	string assignment_state( string token )
 	{
-		if ( identify_token( token ) != "assignment operator" )
-			throw new Exception( unexpected( token ) );
+		check_token_type( token, "assignment operator" );
 		
 		return " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
 	}
@@ -440,47 +440,34 @@ class Parser
 	string foreach_state( string token )
 	{
 		context.insertFront( "for" );
-		if ( identify_token( token ) != "identifier" )
-			throw new Exception( unexpected( token ) );
+		check_token_type( token, "identifier" );
 
 		string result = token;
 		if ( l.peek() == "," )
 		{
 			result ~= l.pop();
-			if ( identify_token( l.peek() ) != "identifier" )
-				throw new Exception( unexpected( l.peek() ) );
+			check_token_type( l.peek(), "identifier" );
 			result ~= l.pop();
 		}
 
-		if ( l.peek() != "in" )
-			throw new Exception( expected( "in", l.peek() ) );
+		check_token( l.pop(), "in" );
 
-		l.pop();
 		result ~= "; ";
 
 		if ( identify_token( l.peek() ) == "number literal" )
 		{
 			result ~= l.pop();
-
-			if ( l.peek() != ".." )
-				throw new Exception( expected( "..", l.peek() ) );
-
-			result ~= " " ~ l.pop() ~ " ";
-
-			if ( identify_token( l.peek() ) != "number literal" )
-				throw new Exception( unexpected( l.peek() ) );
-		}
-		else if ( identify_token( l.peek() ) != "identifier" )
-		{
-			throw new Exception( unexpected( l.peek() ) );
+			check_token( l.pop(), ".." );
+			result ~= " .. ";
+			check_token_type( l.peek(), "number literal" );
+			result ~= l.pop();
+			check_token( l.pop(), ":" );
+			return result;
 		}
 
+		check_token_type( l.peek(), "identifier" );
 		result ~= l.pop();
-
-		if ( l.peek() != ":" )
-			throw new Exception( expected( ":", l.peek() ) );
-
-		l.pop();
+		check_token( l.pop(), ":" );
 
 		return result;
 	}
@@ -492,10 +479,7 @@ class Parser
 
 		string expression = expression_state( token );
 
-		if ( l.peek() != ":" )
-			throw new Exception( expected( ":", l.peek() ) );
-
-		l.pop();
+		check_token( l.pop(), ":" );
 
 		return expression;
 	}
@@ -512,7 +496,8 @@ class Parser
 	/// Control branching
 	string conditional_state( string token )
 	{
-		string next = l.pop();
+		if ( l.peek() == "if" )
+			token ~= " " ~ l.pop();
 
 		if ( token == "if" )
 			context.insertFront( "if" );
@@ -521,24 +506,15 @@ class Parser
 
 		// if, else if, else behavior
 		string condition;
-		if ( token == "if" )
-			condition = "if (" ~ expression_state( next ) ~ ")";
-		else if ( token == "else" && next == "if" )
-			condition = "else if (" ~ expression_state( l.pop() ) ~ ")";
+		if ( token == "if" || token == "else if" )
+			condition = token ~ " (" ~ expression_state( l.pop() ) ~ ")";
 		else if ( token == "else" )
 			condition = token;
 		else
 			throw new Exception( unexpected( token ) );
 		
 		// Check for colon after conditional
-		string colon;
-		if ( token == "else" && next != "if" )
-			colon = next;
-		else
-			colon = l.pop();
-
-		if ( colon != ":" )
-			throw new Exception( expected( ":", colon ) );
+		check_token( l.pop(), ":" );
 
 		return condition;
 	}
@@ -619,8 +595,7 @@ class Parser
 		}
 
 		// Must call the function something
-		if ( identify_token( l.peek() ) != "identifier" )
-			throw new Exception( unexpected( l.peek() ) );
+		check_token_type( l.peek(), "identifier" );
 
 		string name = l.pop();
 		string args, template_args, return_type;
@@ -632,19 +607,17 @@ class Parser
 		}
 		
 		// Function declarations must end with colon
-		string colon = l.pop();
-		if ( colon == ":" )
-			return start ~ return_type ~ " " ~ name ~ "(" ~ args ~ ")";
-		else
-			throw new Exception( expected( ":", colon ) );
+		check_token( l.pop(), ":" );
+
+		return start ~ return_type ~ " " ~ name ~ "(" ~ args ~ ")";
 	}
+
 
 	/// This parses args in function declarations of form "(int a, b, T t..."
 	string parse_args( string token )
 	{
 		// Function params must start with "("
-		if ( token != "(" )
-			throw new Exception( expected( "(", token ) );
+		check_token( token, "(" );
 
 		string result;
 		string template_types;
@@ -667,11 +640,9 @@ class Parser
 			// For each identifier we encounter
 			while ( identify_token( l.peek() ) == "identifier" )
 			{
-				string var = l.pop();
+				result ~= type ~ " " ~ l.pop();
 				if ( l.peek() == "," )
-					result ~= type ~ " " ~ var ~ l.pop() ~ " ";
-				else
-					result ~= type ~ " " ~ var;
+					result ~= l.pop() ~ " ";
 			}
 		}
 
@@ -694,18 +665,13 @@ class Parser
 			return "auto";
 		
 		// return type must start with "-> type"
-		if ( token != "->" )
-			throw new Exception( expected( "->", token ) );
-
-		if ( identify_token( l.peek() ) != "type" )
-			throw new Exception( unexpected( l.peek() ) );
+		check_token( token, "->" );
+		check_token_type( l.peek(), "type" );
 
 		string type = l.pop();
-		string next = l.pop();
 
 		// We're done, make sure the function def is done
-		if ( next != ")" )
-			throw new Exception( unexpected( next ) );
+		check_token( l.pop(), ")" );
 
 		return type;
 	}
@@ -713,9 +679,7 @@ class Parser
 	/// Determine what kind of variable this is. 
 	string identifier_state( string token )
 	{
-		if ( identify_token( token ) != "identifier" )
-			throw new Exception( unexpected( token ) );
-
+		check_token_type( token, "identifier" );
 		string identifier = token;
 
 		if ( identify_token( l.peek() ) == "punctuation" && l.peek() != ":" )
@@ -735,9 +699,7 @@ class Parser
 			
 				// template instance
 				case "!":
-					if ( identify_token( l.peek() ) != "type" )
-						throw new Exception( unexpected( l.peek() ) );
-
+					check_token_type( l.peek(), "type" );
 					identifier ~= token ~ l.pop();
 					if ( l.peek() == "(" )
 					{
@@ -783,8 +745,7 @@ class Parser
 	/// Array accesses can have multiple sets of brackets, no commas
 	string array_state( string token )
 	{
-		if ( token != "[" )
-			throw new Exception( expected( "[", token ) );
+		check_token( token, "[" );
 		
 		string result = token;
 		while ( l.peek() != "]" )
@@ -865,14 +826,11 @@ class Parser
 			"equal to": "==",
 			"less than": "<",
 			"more than": ">",
-			"^": "^^"
-		];
-
-		string[string] negate_op = [
 			"not equal to": "!=",
 			"not less than": ">=",
 			"not more than": "<=",
-			"not is": "!is"
+			"not is": "!is",
+			"^": "^^"
 		];
 
 		if ( identify_token( l.peek() ) == "operator"
@@ -881,18 +839,13 @@ class Parser
 		{
 			// Convert operator into D format
 			string op = l.pop();
-			if ( op in conversion )
-				op = conversion[op];
 
 			// Not combines with the next token
 			if ( op == "not" )
-			{
-				string next = l.pop();
-				if ( identify_token( next ) == "comparator" && next != "not" )
-					op = negate_op["not " ~ next];
-				else
-					throw new Exception( unexpected( next ) );
-			}
+				op = "not " ~ l.pop();
+
+			if ( op in conversion )
+				op = conversion[op];
 
 			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
 		}
@@ -906,10 +859,8 @@ class Parser
 	/// Expecting the end of a line
 	string endline_state( string token )
 	{
-		if ( token == "\n" )
-			return endline();
-		else
-			throw new Exception( expected( "newline", token ) );
+		check_token( token, "\n" );
+		return endline();
 	}
 
 	/// Block comments eat the rest of the input until it un-indents
@@ -972,8 +923,7 @@ class Parser
 	string class_state( string token )
 	{
 		context.insertFront( "class" );
-		if ( identify_token( token ) != "identifier" )
-			throw new Exception( unexpected( token ) );
+		check_token_type( token, "identifier" );
 
 		string result = token;
 
@@ -990,62 +940,42 @@ class Parser
 			while ( l.peek() == "," )
 			{
 				result ~= l.pop();
-
-				if ( identify_token( l.peek() ) != "template type" )
-					throw new Exception( unexpected( l.peek() ) );
-
+				check_token_type( l.peek(), "template type" );
 				result ~= l.pop();
 			}
 
-			if ( l.peek() != ")" )
-				throw new Exception( unexpected( l.peek() ) );
-
-			result ~= l.pop();
+			check_token( l.pop(), ")" );
+			result ~= ")";
 		}
 			
-		if ( l.peek() != ":" )
-			throw new Exception( expected( ":", l.peek() ) );
-		else
-			l.pop();
+		check_token( l.pop(), ":" );
 
 		return result ~ endline_state( l.pop() );
 	}
 
 	string class_instance_state( string token )
 	{
-		if ( token != "=" )
-			throw new Exception( expected( "=", token ) );
-
-		if ( l.peek() != "new" )
-			throw new Exception( expected( "new", l.peek() ) );
+		check_token( token, "=" );
+		check_token( l.peek(), "new" );
 
 		string result = " " ~ token ~ " " ~ l.pop();
 
-		if ( identify_token( l.peek() ) != "identifier" )
-			throw new Exception( unexpected( l.peek() ) );
-
+		check_token_type( l.peek(), "identifier" );
 		result ~= " " ~ l.pop();
 
 		// template instance
 		if ( l.peek() == "!" )
 		{
 			result ~= l.pop();
-
-			if ( identify_token( l.peek() ) != "type" )
-				throw new Exception( unexpected( l.peek() ) );
-			
+			check_token_type( l.peek(), "type" );
 			result ~= l.pop();
 		}
 
-		if ( l.peek() != "(" )
-			throw new Exception( expected( "(", l.peek() ) );
-		
+		check_token( l.peek(), "(" );
 		result ~= "(" ~ parse_args( l.pop() );
+		check_token( l.pop(), ")" );
 
-		if ( l.peek() != ")" )
-			throw new Exception( expected( ")", l.peek() ) );
-
-		return result ~ l.pop() ~ ";";
+		return result ~ ");";
 	}
 
 
@@ -1105,8 +1035,7 @@ class Parser
 		if ( token == "except" )
 			next = l.pop();
 
-		if ( next != ":" )
-			throw new Exception( expected( ":", next ) );
+		check_token( next, ":" );
 
 		return exception;
 	}
