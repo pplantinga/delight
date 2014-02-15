@@ -20,7 +20,7 @@ endfunction
 "
 
 syn keyword delightDebug         unittest assert raise
-syn keyword delightStatement     break continue return
+syn keyword delightStatement     break continue return print
 syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while
 syn keyword delightConditional   if else

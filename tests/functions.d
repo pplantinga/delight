@@ -1,3 +1,4 @@
+import std.stdio : writeln;
 pure int add(int a, int b)
 {
 	return a + b;
@@ -21,4 +22,7 @@ void main()
 	int d = subtract!int(2, 1);
 	
 	subtractAdd(c, d);
+	
+	writeln(c);
+	writeln(d);
 }

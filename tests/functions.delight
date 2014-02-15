@@ -14,3 +14,6 @@ procedure main:
 	int d = subtract!int(2, 1)
 	
 	subtractAdd(c, d)
+
+	print c
+	print d

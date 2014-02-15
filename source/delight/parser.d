@@ -34,8 +34,8 @@ class Parser
 	/// Keeps track of the things we want to import
 	string includes;
 
-	/// Whether or not we've included "contains" function
-	bool include_contains = false;
+	/// Whether or not we've included various functions
+	bool[string] include_functions;
 
 	/// Compare and contrast, producing booleans.
 	auto comparator_regex = regex( "^(" ~ join( [
@@ -86,6 +86,7 @@ class Parser
 		"break",
 		"continue",
 		"for",
+		"print",
 		"raise",
 		"return",
 		"unittest",
@@ -139,6 +140,12 @@ class Parser
 			"template type"       : regex( `^[A-Z]$` ),
 			"type"                : type_regex,
 			"user type"           : user_type_regex
+		];
+
+		// Initialize possible includes
+		include_functions = [
+			"contains" : false,
+			"print" : false
 		];
 
 		// Add a beginning symbol to the context stack
@@ -355,6 +362,9 @@ class Parser
 					return "throw new Exception(" ~ l.pop() ~ ");";
 				else
 					return "throw " ~ expression_state( l.pop() ) ~ ";";
+			case "print":
+				add_function( "print" );
+				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -855,7 +865,7 @@ class Parser
 
 			if ( op == "in" )
 			{
-				add_contains();
+				add_function( "contains" );
 				string haystack = expression_state( l.pop() );
 				return "contains(" ~ haystack ~ "," ~ expression ~ ")";
 			}
@@ -1083,12 +1093,22 @@ class Parser
 		return "On line " ~ to!string( l.line_number ) ~ ": expected '" ~ expected ~ "' but got '" ~ unexpected ~ "'";
 	}
 
-	void add_contains()
+	/// Add a function that "delight" has but "d" doesn't
+	void add_function( string func )
 	{
-		if ( include_contains )
+		if ( func !in include_functions || include_functions[func] )
 			return;
 
-		include_contains = true;
-		includes ~= "bool contains(H,N)(H h,N n){foreach(i;h)if(i==n)return true;return false;}\n";
+		include_functions[func] = true;
+		switch ( func )
+		{
+			case "contains":
+				includes ~= "bool contains(H,N)(H h,N n){foreach(i;h)if(i==n)return true;return false;}\n";
+				break;
+			case "print":
+				includes ~= "import std.stdio : writeln;\n";
+				break;
+			default:
+		}
 	}
 }
