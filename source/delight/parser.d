@@ -31,6 +31,12 @@ class Parser
 	/// Keeps track of the current context
 	SList!string context;
 
+	/// Keeps track of the things we want to import
+	string includes;
+
+	/// Whether or not we've included "contains" function
+	bool include_contains = false;
+
 	/// Compare and contrast, producing booleans.
 	auto comparator_regex = regex( "^(" ~ join( [
 		"equal to",
@@ -225,7 +231,7 @@ class Parser
 			}
 		}
 
-		return result;
+		return includes ~ result;
 	}
 	unittest
 	{
@@ -847,6 +853,13 @@ class Parser
 			if ( op in conversion )
 				op = conversion[op];
 
+			if ( op == "in" )
+			{
+				add_contains();
+				string haystack = expression_state( l.pop() );
+				return "contains(" ~ haystack ~ "," ~ expression ~ ")";
+			}
+
 			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
 		}
 
@@ -1068,5 +1081,14 @@ class Parser
 	string expected( string expected, string unexpected )
 	{
 		return "On line " ~ to!string( l.line_number ) ~ ": expected '" ~ expected ~ "' but got '" ~ unexpected ~ "'";
+	}
+
+	void add_contains()
+	{
+		if ( include_contains )
+			return;
+
+		include_contains = true;
+		includes ~= "bool contains(H,N)(H h,N n){foreach(i;h)if(i==n)return true;return false;}\n";
 	}
 }

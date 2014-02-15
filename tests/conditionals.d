@@ -1,3 +1,4 @@
+bool contains(H,N)(H h,N n){foreach(i;h)if(i==n)return true;return false;}
 void main()
 {
 	int x = 1;
@@ -30,5 +31,10 @@ void main()
 	else
 	{
 		z = x + y;
+	}
+
+	if (contains([0,2,4],2))
+	{
+		x = z / 4;
 	}
 }
