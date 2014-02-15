@@ -145,6 +145,7 @@ class Parser
 		// Initialize possible includes
 		include_functions = [
 			"contains" : false,
+			"iota" : false,
 			"print" : false
 		];
 
@@ -872,6 +873,12 @@ class Parser
 
 			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
 		}
+		else if ( l.peek() == ".." )
+		{
+			l.pop();
+			add_function( "iota" );
+			return "iota(" ~ expression ~ "," ~ l.pop() ~ ")";
+		}
 
 		if ( l.peek() == ")" )
 			return expression ~ l.pop();
@@ -1107,6 +1114,9 @@ class Parser
 				break;
 			case "print":
 				includes ~= "import std.stdio : writeln;\n";
+				break;
+			case "iota":
+				includes ~= "import std.algorithm : iota;\n";
 				break;
 			default:
 		}

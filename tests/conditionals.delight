@@ -19,5 +19,5 @@ procedure main:
 	else:
 		z = x + y
 
-	if 2 in [0, 2, 4]:
-		x = z / 4
+	if 2 in 0 .. 3:
+		print "yes"
