@@ -1,3 +1,3 @@
-from std.stdio as io import writeln as print, File
+from std.stdio as io import writeln as writeLine, File
 procedure main:
-	print( "Hello, world!" )
+	writeLine( "Hello, world!" )

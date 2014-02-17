@@ -557,7 +557,8 @@ class Parser
 		check_token( l.pop(), ":" );
 
 		// If a case or default, newline already handled
-		check_token( l.pop(), "\n" );
+		if ( token == "case" || token == "default" )
+			check_token( l.pop(), "\n" );
 
 		return condition;
 	}

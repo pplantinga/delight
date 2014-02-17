@@ -7,33 +7,41 @@ void main()
 	int y = 2;
 	int z = 4;
 	
-	if (x >= y && x > z - y){
+	if (x >= y && x > z - y)
+	{
 		x = y + z;
 	}
 
-	else if (x == y + z || x + 2 != z){
+	else if (x == y + z || x + 2 != z)
+	{
 		y = z;
 		
-		if (y == 3){
+		if (y == 3)
+		{
 			z = x;
 		}
-		else{
+		else
+		{
 			z = y;
 		}
 	}
 
-	else if (!z){
+	else if (!z)
+	{
 		y = 3;
 	}
-	else{
+	else
+	{
 		z = x + y;
 	}
 
-	if (contains(iota(0,3),2)){
+	if (contains(iota(0,3),2))
+	{
 		writeln("yes");
 	}
 
-	switch (x){
+	switch (x)
+	{
 		case 1:
 			x = 2;
 			break;
