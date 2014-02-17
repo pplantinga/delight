@@ -43,6 +43,7 @@ void main()
 	switch (x)
 	{
 		case 1:
+		case 3:
 			x = 2;
 			break;
 		case 2:

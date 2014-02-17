@@ -24,6 +24,7 @@ procedure main:
 
 	switch x:
 		case 1:
+		case 3:
 			x = 2
 		case 2:
 			x = 3

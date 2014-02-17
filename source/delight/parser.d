@@ -560,6 +560,13 @@ class Parser
 		if ( token == "case" || token == "default" )
 			check_token( l.pop(), "\n" );
 
+		// In this case, we don't actually enter the scope yet
+		if ( l.peek() == "case" )
+		{
+			context.removeFront();
+			condition ~= endline();
+		}
+
 		return condition;
 	}
 
