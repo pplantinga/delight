@@ -17,7 +17,7 @@ import std.stdio : writeln;
 import std.range : repeat;
 import std.regex;
 import std.string;
-import std.algorithm : canFind;
+import std.algorithm : canFind, startsWith;
 import std.container : SList;
 
 class Parser
@@ -49,8 +49,11 @@ class Parser
 
 	/// Statements used for branching
 	auto conditional_regex = regex( "^(" ~ join( [
+		"case",
+		"default",
+		"else",
 		"if",
-		"else"
+		"switch"
 	], "|" ) ~ ")$" );
 
 	/// Exception handling
@@ -515,23 +518,46 @@ class Parser
 	{
 		if ( l.peek() == "if" )
 			token ~= " " ~ l.pop();
-
-		if ( token == "if" )
-			context.insertFront( "if" );
-		else if ( token != "if" && context.front != "if" )
+	
+		// Check for else without if
+		if ( startsWith( token, "else" ) && context.front != "if" )
+			throw new Exception( unexpected( token ) );
+		
+		// Check for case, default without switch
+		if ( ( token == "case" || token == "default" )
+				&& context.front != "switch" )
 			throw new Exception( unexpected( token ) );
 
-		// if, else if, else behavior
+		// Else is excepted, because we're still in "if" context
+		if ( !startsWith( token, "else" ) )
+			context.insertFront( token );
+
 		string condition;
-		if ( token == "if" || token == "else if" )
-			condition = token ~ " (" ~ expression_state( l.pop() ) ~ ")";
-		else if ( token == "else" )
-			condition = token;
-		else
-			throw new Exception( unexpected( token ) );
+		switch ( token )
+		{
+			case "if":
+			case "else if":
+			case "switch":
+				condition = token ~ " (" ~ expression_state( l.pop() ) ~ ")";
+				break;
+			case "else":
+				condition = token;
+				break;
+			case "default":
+				condition = token ~ ":";
+				break;
+			case "case":
+				condition = token ~ " " ~ expression_state( l.pop() ) ~ ":";
+				break;
+			default:
+				throw new Exception( unexpected( token ) );
+		}
 		
 		// Check for colon after conditional
 		check_token( l.pop(), ":" );
+
+		// If a case or default, newline already handled
+		check_token( l.pop(), "\n" );
 
 		return condition;
 	}
@@ -1018,12 +1044,21 @@ class Parser
 		if ( token == "begin" )
 			endline = "";
 
-		// Don't use a bracket if token is 'begin' or 'newline' 
+		// Don't use a bracket if token is 'begin' or 'newline'
+		// Nor if we're in a case: or default: context
 		string bracket = "";
-		if ( token == "indent" )
-			bracket = "{";
-		else if ( token == "dedent" )
-			bracket = "}";
+		if ( context.front != "case"
+				&& context.front != "default" )
+		{
+			if ( token == "indent" )
+				bracket = "{";
+			else if ( token == "dedent" )
+				bracket = "}";
+		}
+		else if ( context.front == "case" && token == "dedent" )
+		{
+			bracket = l.indentation ~ "break;";
+		}
 
 		// Exiting a context when there's an end-indent
 		if ( token == "dedent" )

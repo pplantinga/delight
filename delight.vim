@@ -23,7 +23,7 @@ syn keyword delightDebug         unittest assert raise
 syn keyword delightStatement     break continue return print
 syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while
-syn keyword delightConditional   if else
+syn keyword delightConditional   if else switch case default
 syn keyword delightImport        import
 syn keyword delightException     try except finally
 syn keyword delightOperator      and in is not or more less than equal to

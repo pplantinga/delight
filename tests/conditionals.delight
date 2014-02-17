@@ -21,3 +21,11 @@ procedure main:
 
 	if 2 in 0 .. 3:
 		print "yes"
+
+	switch x:
+		case 1:
+			x = 2
+		case 2:
+			x = 3
+		default:
+			x = 5
