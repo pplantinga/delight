@@ -465,7 +465,7 @@ class Parser
 		string result = token;
 		if ( l.peek() == "," )
 		{
-			result ~= l.pop();
+			result ~= l.pop() ~ " ";
 			check_token_type( l.peek(), "identifier" );
 			result ~= l.pop();
 		}

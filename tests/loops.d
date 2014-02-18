@@ -1,25 +1,25 @@
 void main()
 {
 	int[] arr = [1,2,3];
-	int i = 0;
-	foreach (x; arr)
+	int y = 0;
+	foreach (i, x; arr)
 	{
-		i += x;
+		y += x;
 	}
 
 	foreach (j; 0 .. 5)
 	{
-		i -= j;
-		if (i < 0)
+		y -= j;
+		if (y < 0)
 		{
 			break;
 		}
 	}
 
-	while (i < 10)
+	while (y < 10)
 	{
-		i *= 2;
+		y *= 2;
 		
-		i -= 2;
+		y -= 2;
 	}
 }

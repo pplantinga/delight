@@ -1,15 +1,15 @@
 procedure main:
 	int[] arr = [1, 2, 3]
-	int i = 0
-	for x in arr:
-		i += x
+	int y = 0
+	for i, x in arr:
+		y += x
 
 	for j in 0 .. 5:
-		i -= j
-		if i less than 0:
+		y -= j
+		if y less than 0:
 			break
 
-	while i less than 10:
-		i *= 2
+	while y less than 10:
+		y *= 2
 
-		i -= 2
+		y -= 2
