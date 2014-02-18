@@ -1,0 +1,21 @@
+import std.stdio
+
+procedure main:
+
+	int abcd = 3
+
+	int i = 3
+	while i less than 5:
+		i += 1
+	
+		abcd += i
+		if i less than 4:
+			abcd = 2 * 5
+	
+
+	int[] array = [2,3,4,5,6]
+	for i in array:
+	
+		abcd -= i
+	
+
