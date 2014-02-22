@@ -1,6 +1,6 @@
 import std.stdio
 
-procedure main:
+procedure main():
 
 	int abcd = 3
 
