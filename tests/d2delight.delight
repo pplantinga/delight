@@ -1,4 +1,26 @@
+#.
+ * Block comment
+ */
 import std.stdio
+
+function add( int a, int b -> int ):
+
+	return a + b
+
+
+procedure print( string toprint ):
+
+	writeln( toprint )
+
+
+class c:
+
+	int a = 5
+	function add( int b -> int ):
+	
+		a += b
+	
+
 
 procedure main():
 
@@ -9,13 +31,33 @@ procedure main():
 		i += 1
 	
 		abcd += i
-		if i less than 4:
-			abcd = 2 * 5
+		if i less than 4 and i more than 0:
+			abcd = add( i, 2 )
 	
 
 	int[] array = [2,3,4,5,6]
 	for i in array:
 	
 		abcd -= i
+	
+
+	sum = 1
+	while sum not more than 20:
+	
+		sum += 1
+		switch sum:
+		
+			case 1:
+				sum += 1
+				break
+			case 2:
+				sum += 2
+				break
+			case 5:
+				sum += 5
+				break
+			default:
+				sum = sum * 2
+		
 	
 
