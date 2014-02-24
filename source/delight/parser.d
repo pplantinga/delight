@@ -817,22 +817,18 @@ class Parser
 	string array_literal_state( string token )
 	{
 		string result = token;
-		while ( true )
-		{
-			if ( l.peek() != "]" )
-				result ~= expression_state( l.pop() );
 
-			token = l.pop();
-			result ~= token;
-			if ( token == "," )
-				continue;
-			else if ( token == "]" )
-				break;
+		while ( l.peek() != "]" )
+		{
+			result ~= expression_state( l.pop() );
+
+			if ( l.peek() == "," || l.peek() == ":" )
+				result ~= l.pop() ~ " ";
 			else
-				throw new Exception( expected( ",' or ']", token ) );
+				check_token( "]", l.peek() );
 		}
 		
-		return result;
+		return result ~ l.pop();
 	}
 
 	/// Expression state
