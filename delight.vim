@@ -58,7 +58,7 @@ endif
 "
 
 syn keyword delightType byte ubyte short ushort int uint long ulong cent ucent
-syn keyword delightType void bool Object
+syn keyword delightType void bool Object auto
 syn keyword delightType float double real
 syn keyword delightType short int uint long ulong float
 syn keyword delightType char wchar dchar string wstring dstring
