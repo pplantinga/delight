@@ -89,6 +89,7 @@ class Parser
 		"break",
 		"continue",
 		"for",
+		"passthrough",
 		"print",
 		"raise",
 		"return",
@@ -369,6 +370,8 @@ class Parser
 			case "print":
 				add_function( "print" );
 				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
+			case "passthrough":
+				return passthrough_state( l.pop() );
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -511,6 +514,15 @@ class Parser
 			return token ~ ";";
 		else
 			return token ~ " " ~ expression_state( l.pop() ) ~ ";";
+	}
+
+	/// This code gets passed to D as is
+	string passthrough_state( string token )
+	{
+		int level = l.indentation_level;
+		check_token( l.pop(), ":" );
+
+		return l.pop();	
 	}
 
 	/// Control branching
@@ -923,10 +935,10 @@ class Parser
 		return endline();
 	}
 
-	/// Block comments eat the rest of the input until it un-indents
-	string block_comment_state( string token )
+	/// Blocks eat the rest of the input until it un-indents
+	string block_state( string token )
 	{
-		string indent = join( repeat( l.indentation, l.block_comment_level ) );
+		string indent = join( repeat( l.indentation, l.block_level ) );
 		
 		// Do the whole first line at once
 		string line = l.pop();
@@ -1081,7 +1093,7 @@ class Parser
 
 		// Check if there's a block comment coming up
 		if ( !l.is_empty() && ( l.peek() == "#" || l.peek() == "#." ) )
-			return bracket ~ endline ~ block_comment_state( l.pop() );
+			return bracket ~ endline ~ block_state( l.pop() );
 		else
 			return bracket ~ endline;
 	}

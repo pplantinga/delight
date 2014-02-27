@@ -14,13 +14,14 @@ import std.stdio : writeln, File;
 import std.regex;
 import std.container : DList;
 import std.array : join;
+import std.math : abs;
 
 class Lexer
 {
 	static immutable MAX_INDENT = 10000;
 	int line_number;
 	int indentation_level;
-	int block_comment_level = MAX_INDENT;
+	int block_level = MAX_INDENT;
 	string indentation;
 	DList!string tokens;
 	File f;
@@ -155,6 +156,11 @@ class Lexer
 	void tokenize_line()
 	{
 		string current_line = f.readln();
+
+		// Keep track of which line we're at (for errors and such).
+		line_number += 1;
+
+		// Read newlines into a variable, so indentation isn't messed up
 		string newlines;
 		while ( current_line == "\n" )
 		{
@@ -163,67 +169,51 @@ class Lexer
 			current_line = f.readln();
 		}
 
-		// Keep track of which line we're at (for errors and such).
-		line_number += 1;
-	
 		// Check for indentation
+		auto whitespace_regex = regex( `^[\t| ]*` );
+		string whitespace = matchFirst( current_line, whitespace_regex ).hit;
+		current_line = replaceFirst( current_line, whitespace_regex, `` );
 		int level;
-		if ( indentation && indentation.length < current_line.length )
-		{
-			while ( current_line[0 .. indentation.length] == indentation )
-			{
-				level += 1;
-
-				// remove token
-				current_line = current_line[indentation.length .. $];
-			}
-		}
-
+		if ( indentation )
+			level = whitespace.length / indentation.length;
 
 		// indentation tokens
 		string token;
-		int end;
 		if ( level < indentation_level )
-		{
 			token = "dedent";
-			end = indentation_level - level;
-		}
-		else if ( level > indentation_level )
-		{
+		else
 			token = "indent";
-			end = level - indentation_level;
-		}
 
-		for ( int i = 0; i < end; i++ )
+		for ( int i = 0; i < abs( level - indentation_level ); i++ )
 			tokens.insertFront( token );
 
-		// Check for block comments
+		// Check for stuff we won't parse (comments)
 		if ( current_line && current_line[0] == '#' )
 		{
 			// Set the level we can't go past
-			block_comment_level = level;
+			block_level = level;
 
 			// First line is indented one less than the rest
 			level += 1;
 		}
 
-		// If we're in a block comment
-		if ( level > block_comment_level )
+		// If we're in a block that we're not parsing
+		if ( level > block_level )
 		{
 			// Add the newline tokens
 			foreach ( count; 0 .. newlines.length )
 				tokens.insertBack( "\n" );
 
-			// Parse the comment
-			parse_comment( tokens, current_line );
+			// Parse the block
+			parse_block( tokens, current_line );
 			
 			// That's all folks
 			return;
 		}
 		else
 		{
-			// Don't allow re-entry into block comment
-			block_comment_level = MAX_INDENT;
+			// Don't allow re-entry into expired blocks
+			block_level = MAX_INDENT;
 		}
 
 		// Add the newlines back in
@@ -249,26 +239,26 @@ class Lexer
 		foreach ( hit; c )
 		{
 			if ( hit[0][0] == '#' )
-				parse_comment( tokens, hit[0] );
+				parse_block( tokens, hit[0] );
 			else
 				tokens.insertBack( hit );
 		}
 	}
 
-	void parse_comment( ref DList!string tokens, string comment )
+	void parse_block( ref DList!string tokens, string block )
 	{
-		if ( comment[0] == '#' )
+		if ( block[0] == '#' )
 		{
 			string token = "#";
-			if ( comment[1] == '.' )
+			if ( block[1] == '.' )
 				token = "#.";
 
 			tokens.insertBack( token );
-			tokens.insertBack( comment[token.length .. $-1] );
+			tokens.insertBack( block[token.length .. $-1] );
 		}
 		else
 		{
-			tokens.insertBack( comment[0 .. $-1] );
+			tokens.insertBack( block[0 .. $-1] );
 		}
 		
 		tokens.insertBack( "\n" );
