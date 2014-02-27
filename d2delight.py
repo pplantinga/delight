@@ -5,6 +5,7 @@ import sys
 
 if len( sys.argv ) != 2:
 	print "usage: d2delight.py path/to/file.d"
+	sys.exit()
 
 with open( sys.argv[1], 'r' ) as file:
 	content = file.read()
