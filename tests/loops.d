@@ -1,6 +1,6 @@
 void main()
 {
-	int[] arr = [1,2,3];
+	int[] arr = [1, 2, 3];
 	int y = 0;
 	foreach (i, x; arr)
 	{
