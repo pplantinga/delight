@@ -14,7 +14,7 @@
  * ----------------
  * to create an executable.
  */
-module delight;
+module delight.app;
 
 import delight.parser;
 import std.stdio;
