@@ -1,0 +1,10 @@
+procedure main:
+	int i = 3
+
+	passthrough:
+		i++;
+		const int abcd( out int a ) {
+			return a + 3;
+		}
+
+	print i

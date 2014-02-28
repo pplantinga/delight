@@ -16,6 +16,6 @@ void main()
 	/++
 	 + indented docblock
 	 +/
-	int x = 5;// inline
-	int y = 6;/// inline doc
+	int x = 5; // inline
+	int y = 6; /// inline doc
 }

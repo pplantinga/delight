@@ -371,7 +371,7 @@ class Parser
 				add_function( "print" );
 				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
 			case "passthrough":
-				return passthrough_state( l.pop() );
+				return passthrough_state( token );
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -521,8 +521,9 @@ class Parser
 	{
 		int level = l.indentation_level;
 		check_token( l.pop(), ":" );
+		context.insertFront( "passthrough" );
 
-		return l.pop();	
+		return block_state( token );
 	}
 
 	/// Control branching
@@ -938,17 +939,34 @@ class Parser
 	/// Blocks eat the rest of the input until it un-indents
 	string block_state( string token )
 	{
+		string result, end;
 		string indent = join( repeat( l.indentation, l.block_level ) );
-		
-		// Do the whole first line at once
-		string line = l.pop();
-		string newline = l.pop();
-		string result = endline() ~ " +" ~ line ~ newline ~ indent ~ " +";
-		if ( token == "#" )
-			result = "/+" ~ result;
-		else if ( token == "#." )
-			result = "/++" ~ result;
 
+		// If this is a comment block
+		if ( token != "passthrough" )
+		{
+			// Format nicely
+			indent ~= " +";
+
+			// First line has opening "/+"
+			result = "/+";
+			if ( token == "#." )
+				result = "/++";
+
+			result ~= "\n" ~ indent ~ " ";
+
+			// Closing "+/"
+			end = "/";
+		}
+
+		// Add first line to the result
+		while ( l.peek() != "\n" )
+			result ~= l.pop();
+
+		// Add newline to the result
+		result ~= l.pop() ~ indent;
+
+		// If we're going into scope, 
 		if ( l.peek() == "indent" )
 		{
 			l.pop();
@@ -957,12 +975,15 @@ class Parser
 			while ( level > 0 )
 			{
 				/// Indentation inside the block
-				/// Use 2 spaces cuz we're inside the comment, tabs can mess up
-				inside = join( repeat( "  ", level - 1 ) );
+				/// Use 2 spaces in comments, tabs can mess up
+				if ( token == "passthrough" )
+					inside = join( repeat( l.indentation, level - 1 ) );
+				else
+					inside = join( repeat( "  ", level - 1 ) );
 				
 				token = l.pop();
 				if ( token == "\n" )
-					result ~= "\n" ~ indent ~ " +";
+					result ~= "\n" ~ indent;
 				else if ( token == "indent" )
 					level += 1;
 				else if ( token == "dedent" )
@@ -972,7 +993,7 @@ class Parser
 			}
 		}
 
-		return result ~= "/" ~ endline();
+		return result ~ end ~ endline();
 	}
 
 	/// Inline comments just eat the rest of the line
@@ -980,9 +1001,9 @@ class Parser
 	{
 		string result;
 		if ( token == "#" )
-			result = "//";
+			result = " // ";
 		else if ( token == "#." )
-			result = "///";
+			result = " /// ";
 		else
 			throw new Exception( expected( "#", token ) );
 

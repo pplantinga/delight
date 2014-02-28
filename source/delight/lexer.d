@@ -15,6 +15,8 @@ import std.regex;
 import std.container : DList;
 import std.array : join;
 import std.math : abs;
+import std.algorithm : startsWith;
+import std.string : strip;
 
 class Lexer
 {
@@ -188,7 +190,8 @@ class Lexer
 			tokens.insertFront( token );
 
 		// Check for stuff we won't parse (comments)
-		if ( current_line && current_line[0] == '#' )
+		auto block_start = regex( `^(#|passthrough)` );
+		if ( !matchFirst( current_line, block_start ).empty )
 		{
 			// Set the level we can't go past
 			block_level = level;
@@ -254,7 +257,13 @@ class Lexer
 				token = "#.";
 
 			tokens.insertBack( token );
-			tokens.insertBack( block[token.length .. $-1] );
+			string inside = strip( block[token.length .. $-1] );
+			tokens.insertBack( inside );
+		}
+		else if ( startsWith( block, "passthrough" ) )
+		{
+			tokens.insertBack( "passthrough" );
+			tokens.insertBack( block[11 .. $-1] );
 		}
 		else
 		{
