@@ -20,8 +20,8 @@ endfunction
 "
 
 syn keyword delightDebug         unittest assert raise
-syn keyword delightStatement     break continue return print passthrough
-syn keyword delightFunction      function method procedure
+syn keyword delightStatement     break continue return print passthrough new
+syn keyword delightFunction      function method procedure this
 syn keyword delightRepeat        for while
 syn keyword delightConditional   if else switch case default
 syn keyword delightImport        import
