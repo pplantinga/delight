@@ -38,7 +38,7 @@ class Parser
 	bool[string] include_functions;
 
 	/// Attributes for various things
-	auto attribute_regex = regex( "^(" ~ join( [
+	auto attributes = [
 		"abstract",
 		"deprecated",
 		"export",
@@ -53,56 +53,56 @@ class Parser
 		"scope",
 		"static",
 		"synchronized"
-	], "|" ) ~ ")$" );
+	];
 
 	/// Compare and contrast, producing booleans.
-	auto comparator_regex = regex( "^(" ~ join( [
+	auto comparators = [
 		"equal to",
 		"in",
 		"is",
 		"less than",
 		"more than",
 		"not"
-	], "|" ) ~ ")$" );
+	];
 
 	/// Statements used for branching
-	auto conditional_regex = regex( "^(" ~ join( [
+	auto conditionals = [
 		"case",
 		"default",
 		"else",
 		"if",
 		"switch"
-	], "|" ) ~ ")$" );
+	];
 
 	/// Exception handling
-	auto exception_regex = regex( "^(" ~ join( [
+	auto exceptions = [
 		"try",
 		"except",
 		"finally"
-	], "|" ) ~ ")$" );
+	];
 
 	/// Function types.
-	auto function_type_regex = regex( "^(" ~ join( [
+	auto function_types = [
 		"function",
 		"method",
 		"procedure"
-	], "|" ) ~ ")$" );
+	];
 
 	/// For imports
-	auto library_regex = regex( "^(" ~ join( [
+	auto librarys = [
 		"as",
 		"from",
 		"import"
-	], "|" ) ~ ")$" );
+	];
 
 	/// join comparisons
-	auto logical_regex = regex( "^(" ~ join( [
+	auto logical = [
 		"and",
 		"or"
-	], "|" ) ~ ")$" );
+	];
 
 	/// These do things.
-	auto statement_regex = regex( "^(" ~ join( [
+	auto statements = [
 		"assert",
 		"break",
 		"continue",
@@ -113,10 +113,10 @@ class Parser
 		"return",
 		"unittest",
 		"while"
-	], "|" ) ~ ")$" );
+	];
 
 	/// How is stuff stored in memory?
-	auto type_regex = regex( "^(" ~ join( [
+	auto types = [
 		"auto", "bool", "void", "string",
 		"byte", "short", "int", "long", "cent",
 		"ubyte", "ushort", "uint", "ulong", "ucent",
@@ -124,13 +124,13 @@ class Parser
 		"ifloat", "idouble", "ireal",
 		"cfloat", "cdouble", "creal",
 		"char", "wchar", "dchar"
-	], "|" ) ~ ")$" );
+	];
 
 	/// More complicated types.
-	auto user_type_regex = regex( "^(" ~ join( [
+	auto user_types = [
 		"class",
 		"enum"
-	], "|" ) ~ ")$" );
+	];
 
 	/**
 	 * Constructor takes a string containing location of source code
@@ -146,23 +146,23 @@ class Parser
 		/// can only happen inside a function in D
 		symbol_regexes = [
 			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
-			"attribute"           : attribute_regex,
+			"attribute"           : regexify( attributes ),
 			"character literal"   : regex( `^'\\?.'$` ),
-			"comparator"          : comparator_regex,
-			"conditional"         : conditional_regex,
-			"exception"           : exception_regex,
-			"function type"       : function_type_regex,
-			"library"             : library_regex,
-			"logical"             : logical_regex,
+			"comparator"          : regexify( comparators ),
+			"conditional"         : regexify( conditionals ),
+			"exception"           : regexify( exceptions ),
+			"function type"       : regexify( function_types ),
+			"library"             : regexify( librarys ),
+			"logical"             : regexify( logical ),
 			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
 			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
 			"operator"            : regex( `^[+*%^/~-]$` ),
 			"punctuation"         : regex( `^([.,!:()\[\]#]|\.\.|#\.|->)$` ),
-			"statement"           : statement_regex,
+			"statement"           : regexify( statements ),
 			"string literal"      : regex( `^".*"$` ),
 			"template type"       : regex( `^[A-Z]$` ),
-			"type"                : type_regex,
-			"user type"           : user_type_regex
+			"type"                : regexify( types ),
+			"user type"           : regexify( user_types )
 		];
 
 		// Initialize possible includes
@@ -174,6 +174,11 @@ class Parser
 
 		// Add a beginning symbol to the context stack
 		context.insertFront( "start" );
+	}
+
+	auto regexify( string[] tokens )
+	{
+		return regex( "^(" ~ join( tokens, "|" ) ~ ")$" );
 	}
 
 	/**
