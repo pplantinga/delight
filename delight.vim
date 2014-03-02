@@ -2,7 +2,7 @@
 " Language:     Delight
 " Maintainer:   Peter Massey-Plantinga
 " URL:          https://github.com/pplantinga/delight
-" Last Change:  2014-01-28
+" Last Change:  2014-03-02
 " Filenames:    *.delight
 " Version:      0.1
 "
@@ -19,13 +19,17 @@ endfunction
 " Keywords
 "
 
-syn keyword delightDebug         unittest assert raise
+syn keyword delightDebug         unittest assert deprecated
+syn keyword delightScopeDecl     public protected private export package
 syn keyword delightStatement     break continue return print passthrough new
-syn keyword delightFunction      function method procedure this
+syn keyword delightStorageClass  auto static override abstract ref scope
+syn keyword delightStorageClass  synchronized immutable lazy
+syn keyword delightStructure     class enum this super
+syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while
 syn keyword delightConditional   if else switch case default
 syn keyword delightImport        import
-syn keyword delightException     try except finally
+syn keyword delightException     try except finally raise
 syn keyword delightOperator      and in is not or more less than equal to
 
 "
@@ -58,7 +62,7 @@ endif
 "
 
 syn keyword delightType byte ubyte short ushort int uint long ulong cent ucent
-syn keyword delightType void bool Object auto
+syn keyword delightType void bool Object
 syn keyword delightType float double real
 syn keyword delightType short int uint long ulong float
 syn keyword delightType char wchar dchar string wstring dstring
@@ -117,8 +121,11 @@ syn keyword delightBoolean TRUE FALSE
 " Defs
 "
 
-hi def link delightDebug            Statement
+hi def link delightDebug            Debug
+hi def link delightScopeDecl        StorageClass
+hi def link delightStorageClass     StorageClass
 hi def link delightStatement        Statement
+hi def link delightStructure        Structure
 hi def link delightImport           Include
 hi def link delightFunction         Function
 hi def link delightConditional      Conditional

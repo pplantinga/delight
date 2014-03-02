@@ -37,6 +37,24 @@ class Parser
 	/// Whether or not we've included various functions
 	bool[string] include_functions;
 
+	/// Attributes for various things
+	auto attribute_regex = regex( "^(" ~ join( [
+		"abstract",
+		"deprecated",
+		"export",
+		"immutable",
+		"lazy",
+		"override",
+		"package",
+		"private",
+		"protected",
+		"public",
+		"ref",
+		"scope",
+		"static",
+		"synchronized"
+	], "|" ) ~ ")$" );
+
 	/// Compare and contrast, producing booleans.
 	auto comparator_regex = regex( "^(" ~ join( [
 		"equal to",
@@ -128,6 +146,7 @@ class Parser
 		/// can only happen inside a function in D
 		symbol_regexes = [
 			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
+			"attribute"           : attribute_regex,
 			"character literal"   : regex( `^'\\?.'$` ),
 			"comparator"          : comparator_regex,
 			"conditional"         : conditional_regex,
@@ -174,20 +193,13 @@ class Parser
 	{
 		writeln( "identify_token import" );
 		auto p = new Parser( "tests/import.delight" );
-		assert( p.identify_token( "\n" ) == "newline" );
-		assert( p.identify_token( "dedent" ) == "newline" );
-		assert( p.identify_token( "begin" ) == "newline" );
-		assert( p.identify_token( `""` ) == "string literal" );
-		assert( p.identify_token( `"string"` ) == "string literal" );
-		assert( p.identify_token( "'a'" ) == "character literal" );
-		assert( p.identify_token( "'\\n'" ) == "character literal" );
-		assert( p.identify_token( "5" ) == "number literal" );
-		assert( p.identify_token( "5.2" ) == "number literal" );
-		assert( p.identify_token( "T" ) == "template type" );
+		assert( p.identify_token( "immutable" ) == "attribute" );
 		assert( p.identify_token( "=" ) == "assignment operator" );
 		assert( p.identify_token( "+=" ) == "assignment operator" );
 		assert( p.identify_token( "%=" ) == "assignment operator" );
 		assert( p.identify_token( "~=" ) == "assignment operator" );
+		assert( p.identify_token( "'a'" ) == "character literal" );
+		assert( p.identify_token( "'\\n'" ) == "character literal" );
 		assert( p.identify_token( "if" ) == "conditional" );
 		assert( p.identify_token( "else" ) == "conditional" );
 		assert( p.identify_token( "less than" ) == "comparator" );
@@ -201,6 +213,11 @@ class Parser
 		assert( p.identify_token( "import" ) == "library" );
 		assert( p.identify_token( "from" ) == "library" );
 		assert( p.identify_token( "and" ) == "logical" );
+		assert( p.identify_token( "\n" ) == "newline" );
+		assert( p.identify_token( "dedent" ) == "newline" );
+		assert( p.identify_token( "begin" ) == "newline" );
+		assert( p.identify_token( "5" ) == "number literal" );
+		assert( p.identify_token( "5.2" ) == "number literal" );
 		assert( p.identify_token( "-" ) == "operator" );
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
@@ -210,6 +227,9 @@ class Parser
 		assert( p.identify_token( "->" ) == "punctuation" );
 		assert( p.identify_token( ".." ) == "punctuation" );
 		assert( p.identify_token( "for" ) == "statement" );
+		assert( p.identify_token( `""` ) == "string literal" );
+		assert( p.identify_token( `"string"` ) == "string literal" );
+		assert( p.identify_token( "T" ) == "template type" );
 		assert( p.identify_token( "char" ) == "type" );
 		assert( p.identify_token( "string" ) == "type" );
 		assert( p.identify_token( "int" ) == "type" );
@@ -291,6 +311,8 @@ class Parser
 	{
 		switch ( identify_token( token ) )
 		{
+			case "attribute":
+				return attribute_state( token );
 			case "library":
 				return library_state( token );
 			case "statement":
@@ -339,6 +361,31 @@ class Parser
 				throw new Exception( unexpected( token ) );
 		}
 	}
+
+	string attribute_state( string token )
+	{
+		if ( l.peek() == ":" )
+		{
+			// Add attribute to front of current context
+			context.insertFront( token );
+
+			return token ~ colon_state( l.pop() );
+		}
+
+		return token ~ " ";
+	}
+
+	string colon_state( string token )
+	{
+		check_token( token, ":" );
+
+		string endline = endline_state( l.pop() );
+
+		check_token( l.pop(), "indent" );
+
+		return endline ~ newline_state( "indent" );
+	}
+
 
 	string statement_state( string token )
 	{
@@ -1020,30 +1067,39 @@ class Parser
 
 		string result = token;
 
+		// Check if this class is actually a template
 		if ( l.peek() == "(" )
 		{
-			// This isn't a class, it's a template!
 			context.removeFront();
 			context.insertFront( "template" );
-			result ~= l.pop();
-
-			if ( identify_token( l.peek() ) == "template type" )
-				result ~= l.pop();
-
-			while ( l.peek() == "," )
-			{
-				result ~= l.pop();
-				check_token_type( l.peek(), "template type" );
-				result ~= l.pop();
-			}
-
-			check_token( l.pop(), ")" );
-			result ~= ")";
+			result ~= parse_template_types( l.pop() );
+		}
+		else if ( l.peek() == "<-" )
+		{
+			l.pop();
+			check_token_type( l.peek(), "identifier" );
+			result ~= " : " ~ l.pop();
 		}
 			
-		check_token( l.pop(), ":" );
+		return result ~ colon_state( l.pop() );
+	}
 
-		return result ~ endline_state( l.pop() );
+	string parse_template_types( string token )
+	{
+		check_token( token, "(" );
+		check_token_type( l.peek(), "template type" );
+
+		string result = token ~ l.pop();
+
+		while ( l.peek() == "," )
+		{
+			result ~= l.pop();
+			check_token_type( l.peek(), "template type" );
+			result ~= l.pop();
+		}
+
+		check_token( l.pop(), ")" );
+		return result ~ ")";
 	}
 
 	string class_instance_state( string token )

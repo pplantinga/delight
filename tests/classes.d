@@ -1,9 +1,12 @@
 class test
 {
 	int myvar = 5;
-	auto addto(int a)
+	protected
 	{
-		myvar += a;
+		abstract void addto(int a)
+		{
+			myvar += a;
+		}
 	}
 }
 
@@ -17,9 +20,20 @@ class another(T)
 	}
 }
 
+class tester : test
+{
+	override
+	{
+		void addto(int a)
+		{
+			myvar += a + 1;
+		}
+	}
+}
+
 void main()
 {
-	test a = new test();
+	tester a = new tester();
 	a.myvar = 6;
 	a.addto(7);
 	another!int b = new another!int();

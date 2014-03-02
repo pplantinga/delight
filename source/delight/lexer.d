@@ -232,6 +232,7 @@ class Lexer
 			`equal to`,
 			`[A-Za-z_]+`,           // identifiers and keywords
 			`->`,                   // function return
+			`<-`,                   // inheritance
 			`\.\.`,                 // range and slice operator
 			`[+*%/~^-]?=`,          // assignment operators
 			`[.,!:\[\]()+*~/%\n^-]` // punctuation and operators
