@@ -841,6 +841,9 @@ class Parser
 	/// Parses arguments to a function
 	string function_call_state( string token )
 	{
+		if ( token == ")" )
+			return token;
+
 		switch ( identify_token( token ) )
 		{
 			case "string literal":
