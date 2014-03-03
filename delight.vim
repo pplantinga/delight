@@ -75,6 +75,12 @@ syn keyword delightType size_t ptrdiff_t sizediff_t equals_t hash_t
 syn region delightString	start=+"+ end=+"[cwd]\=+ skip=+\\\\\|\\"+ contains=dEscSequence,@Spell
 
 "
+" Chars
+"
+syn match delightCharacter	"'\\.'"
+syn match delightCharacter	"'[^\\]'"
+
+"
 " Numbers
 "
 syn case ignore
@@ -113,9 +119,10 @@ syn cluster delightTokens add=dDec,dHex,dOctal,dOctalError,dBinary,dFloat,dHexFl
 syn case match
 
 "
-" Booleans
+" Constants
 "
 syn keyword delightBoolean TRUE FALSE
+syn keyword delightConstant NULL
 
 "
 " Defs
@@ -138,6 +145,8 @@ hi def link delightComment          Comment
 hi def link delightTodo             Todo
 
 hi def link delightString           String
+hi def link delightCharacter        Character
+hi def link delightConstant         Constant
 hi def link delightBoolean          Boolean
 hi def link delightBinary           Number
 hi def link delightDec              Number

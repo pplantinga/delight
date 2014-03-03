@@ -397,7 +397,7 @@ class Parser
 		switch ( token )
 		{
 			case "for":
-				return "foreach (" ~ foreach_state( l.pop() ) ~ ")";
+				return "foreach " ~ foreach_state( l.pop() );
 			case "while":
 				return "while (" ~ while_state( l.pop() ) ~ ")";
 			case "return":
@@ -529,6 +529,7 @@ class Parser
 
 		result ~= "; ";
 
+		// Range of the form "1 .. 40"
 		if ( identify_token( l.peek() ) == "number literal" )
 		{
 			result ~= l.pop();
@@ -536,15 +537,13 @@ class Parser
 			result ~= " .. ";
 			check_token_type( l.peek(), "number literal" );
 			result ~= l.pop();
-			check_token( l.pop(), ":" );
-			return result;
+			return "(" ~ result ~ ")" ~ colon_state( l.pop() );
 		}
 
-		check_token_type( l.peek(), "identifier" );
-		result ~= l.pop();
-		check_token( l.pop(), ":" );
+		// Parse array expression
+		result ~= expression_state( l.pop() );
 
-		return result;
+		return "(" ~ result ~ ")" ~ colon_state( l.pop() );
 	}
 
 	/// Generic loop
@@ -645,11 +644,11 @@ class Parser
 		{
 			result = "[";
 
-			while ( identify_token( token ) != "identifier" )
+			while ( identify_token( l.peek() ) != "identifier" )
 			{
-				if ( identify_token( token ) == "number literal"
-						|| identify_token( token ) == "type" )
-					result ~= token;
+				if ( identify_token( l.peek() ) == "number literal"
+						|| identify_token( l.peek() ) == "type" )
+					result ~= l.pop();
 
 				string next = l.pop();
 				if ( next == "," )
@@ -658,15 +657,12 @@ class Parser
 					result ~= "]";
 				else
 					throw new Exception( expected( ",' or ']", next ) );
-
-				token = l.pop();
 			}
-		}
-		else if ( identify_token( token ) != "identifier" )
-		{
-			throw new Exception( unexpected( token ) );
+
+			token = l.pop();
 		}
 
+		check_token_type( token, "identifier" );
 		result ~= " " ~ token;
 		token = l.pop();
 
@@ -677,6 +673,7 @@ class Parser
 
 			case "newline":
 				return result ~ ";" ~ endline();
+
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -748,6 +745,10 @@ class Parser
 				template_types ~= l.peek() ~ ", ";
 
 			string type = l.pop();
+
+			// If type is array
+			if ( l.peek() == "[" )
+				type ~= array_state( l.pop() );
 
 			// Add ref to procedures
 			if ( context.front == "procedure" )
@@ -846,6 +847,10 @@ class Parser
 			case "character literal":
 			case "number literal":
 			case "identifier":
+				// Check for array access
+				if ( l.peek() == "[" )
+					token ~= array_state( l.pop() );
+				
 				string next = l.pop();
 				if ( next == "," )
 					return token ~ ", " ~ function_call_state( l.pop() );
