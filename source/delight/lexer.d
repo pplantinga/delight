@@ -223,19 +223,19 @@ class Lexer
 		current_line = newlines ~ current_line;
 
 		string[] regexes = [
-			`#.*\n`,                // inline comments
-			`".*"`,                 // string literals
-			`'\\?.'`,               // character literals
-			`[0-9]+\.?[0-9]*`,      // number literals
-			`less than`,            // two-word tokens
+			`#.*\n`,                 // inline comments
+			`".*"`,                  // string literals
+			`'\\?.'`,                // character literals
+			`[0-9]+\.?[0-9]*`,       // number literals
+			`less than`,             // two-word tokens
 			`more than`,
 			`equal to`,
-			`[A-Za-z_]+`,           // identifiers and keywords
-			`->`,                   // function return
-			`<-`,                   // inheritance
-			`\.\.`,                 // range and slice operator
-			`[+*%/~^-]?=`,          // assignment operators
-			`[.,!:\[\]()+*~/%\n^-]` // punctuation and operators
+			`[A-Za-z_]+`,            // identifiers and keywords
+			`->`,                    // function return
+			`<-`,                    // inheritance
+			`\.\.`,                  // range and slice operator
+			`[+*%/~^-]?=`,           // assignment operators
+			`[.,!:\[\]()+*~/%\n^$-]` // punctuation and operators
 		];
 		/// The almighty token regex
 		auto r = regex( join( regexes, "|" ) );

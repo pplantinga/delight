@@ -871,7 +871,15 @@ class Parser
 		string result = token;
 		while ( l.peek() != "]" )
 		{
-			result ~= expression_state( l.pop() );
+			token = l.pop();
+			if ( l.peek() == ".." )
+			{
+				result ~= token ~ " " ~ l.pop() ~ " ";
+				result ~= l.pop();
+				continue;
+			}
+			
+			result ~= expression_state( token );
 			
 			if ( l.peek() == "," )
 			{
