@@ -797,45 +797,38 @@ class Parser
 	string identifier_state( string token )
 	{
 		check_token_type( token, "identifier" );
-		string identifier = token;
 
-		if ( identify_token( l.peek() ) == "punctuation" && l.peek() != ":" )
+		if ( !canFind( ["(", "[", "!", "."], l.peek() ) )
+			return token;
+
+		switch ( l.pop() )
 		{
-			token = l.pop();
-			switch ( token )
-			{
-				// Function call
-				case "(":
-					identifier ~= token ~ function_call_state( l.pop() );
-					break;
-				
-				// Array access
-				case "[":
-					identifier ~= array_state( token );
-					break;
+			// Function call
+			case "(":
+				return token ~ "(" ~ function_call_state( l.pop() );
 			
-				// template instance
-				case "!":
-					check_token_type( l.peek(), "type" );
-					identifier ~= token ~ l.pop();
-					if ( l.peek() == "(" )
-					{
-						identifier ~= l.pop();
-						identifier ~= function_call_state( l.pop() );
-					}
-					break;
-			
-				// class member
-				case ".":
-					identifier ~= token ~ identifier_state( l.pop() );
-					break;
+			// Array access
+			case "[":
+				return token ~ array_state( "[" );
+		
+			// template instance
+			case "!":
+				check_token_type( l.peek(), "type" );
+				string identifier = token ~ "!" ~ l.pop();
+				if ( l.peek() == "(" )
+				{
+					identifier ~= l.pop();
+					identifier ~= function_call_state( l.pop() );
+				}
+				return identifier;
+		
+			// class member
+			case ".":
+				return token ~ "." ~ identifier_state( l.pop() );
 
-				default:
-					throw new Exception( unexpected( token ) );
-			}
+			default:
+				throw new Exception( unexpected( token ) );
 		}
-
-		return identifier;
 	}
 
 	/// Parses arguments to a function
