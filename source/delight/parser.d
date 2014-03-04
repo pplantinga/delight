@@ -37,6 +37,9 @@ class Parser
 	/// Whether or not we've included various functions
 	bool[string] include_functions;
 
+	/// Store the last item to come off the stack, for if-else and such
+	string previous_context = "start";
+
 	/// Attributes for various things
 	auto attributes = [
 		"abstract",
@@ -405,6 +408,7 @@ class Parser
 			case "assert":
 				return token ~ "(" ~ expression_state( l.pop() ) ~ ");";
 			case "unittest":
+				context.insertFront( "unittest" );
 				check_token( l.pop(), ":" );
 				return token;
 			case "break":
@@ -580,20 +584,23 @@ class Parser
 	/// Control branching
 	string conditional_state( string token )
 	{
-		if ( l.peek() == "if" )
+		// Add "if" to "else"
+		if ( token == "else" && l.peek() == "if" )
 			token ~= " " ~ l.pop();
 	
 		// Check for else without if
-		if ( startsWith( token, "else" ) && context.front != "if" )
+		if ( startsWith( token, "else" ) && previous_context != "if" )
 			throw new Exception( unexpected( token ) );
 		
-		// Check for case, default without switch
+		// Check for case, default outside switch
 		if ( ( token == "case" || token == "default" )
 				&& context.front != "switch" )
 			throw new Exception( unexpected( token ) );
 
-		// Else is excepted, because we're still in "if" context
-		if ( !startsWith( token, "else" ) )
+		// Add current statement to the context
+		if ( token == "else if" )
+			context.insertFront( "if" );
+		else
 			context.insertFront( token );
 
 		string condition;
@@ -624,7 +631,8 @@ class Parser
 		if ( token == "case" || token == "default" )
 			check_token( l.pop(), "\n" );
 
-		// In this case, we don't actually enter the scope yet
+		// If there are multiple cases in a row,
+		//  we don't actually enter the scope yet
 		if ( l.peek() == "case" )
 		{
 			context.removeFront();
@@ -1160,16 +1168,9 @@ class Parser
 		// Exiting a context when there's an end-indent
 		if ( token == "dedent" )
 		{
-			// Prepend newlines so we stay in proper context
-			while ( !l.is_empty() && l.peek() == "\n" )
-				endline = l.pop() ~ endline;
-
-			// Unless going to "else", "except", or "finally" drop out of context
-			if ( l.is_empty()
-					|| l.peek() != "else"
-					&& l.peek() != "except"
-					&& l.peek() != "finally" )
-				context.removeFront();
+			// Store previous context for if-else and such
+			previous_context = context.front;
+			context.removeFront();
 		}
 
 		// Check if there's a block comment coming up
@@ -1181,25 +1182,31 @@ class Parser
 
 	string exception_state( string token )
 	{
-		string exception = token;
+		// Keep track of context
+		context.insertFront( token );
 
-		string next = l.pop();
+		// parse exception type
+		string exception_type;
+		if ( token == "except" )
+		{
+			exception_type = l.pop();
+			exception_type ~= " " ~ l.pop();
+		}
 
-		if ( token == "try" )
-			context.insertFront( "try" );
-		else if ( token == "except" && context.front == "try" )
-			exception = "catch (" ~ next ~ " " ~ l.pop() ~ ")";
-		else if ( token == "finally" && context.front == "try" )
-			exception = "finally";
+		// Check for proper context
+		bool try_or_except =
+			previous_context == "try" || previous_context == "except";
+
+		string exception;
+		if ( token == "try"
+				|| token == "finally" && try_or_except )
+			exception = token;
+		else if ( token == "except" && try_or_except )
+			exception = "catch (" ~ exception_type ~ ")";
 		else
 			throw new Exception( unexpected( token ) );
 
-		if ( token == "except" )
-			next = l.pop();
-
-		check_token( next, ":" );
-
-		return exception;
+		return exception ~ colon_state( l.pop() );
 	}
 
 	/// New line, plus indentation

@@ -11,7 +11,7 @@ void main()
 	{
 		x = y + z;
 	}
-
+	
 	else if (x == y + z || x + 2 != z)
 	{
 		y = z;
@@ -25,7 +25,7 @@ void main()
 			z = y;
 		}
 	}
-
+	
 	else if (!z)
 	{
 		y = 3;
@@ -34,12 +34,12 @@ void main()
 	{
 		z = x + y;
 	}
-
+	
 	if (contains(iota(0,3),2))
 	{
 		writeln("yes");
 	}
-
+	
 	switch (x)
 	{
 		case 1:

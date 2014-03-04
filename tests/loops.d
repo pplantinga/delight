@@ -6,7 +6,7 @@ void main()
 	{
 		y += x;
 	}
-
+	
 	foreach (j; 0 .. 5)
 	{
 		y -= j;
@@ -15,7 +15,7 @@ void main()
 			break;
 		}
 	}
-
+	
 	while (y < 10)
 	{
 		y *= 2;
