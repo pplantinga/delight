@@ -930,6 +930,9 @@ class Parser
 				throw new Exception( unexpected( token ) );
 		}
 
+		if ( l.peek() == ")" && expression[0] == '(' )
+			expression ~= l.pop();
+
 		/// Contains conversions to D operators
 		string[string] conversion = [
 			"and": "&&",
@@ -944,9 +947,10 @@ class Parser
 			"^": "^^"
 		];
 
-		if ( identify_token( l.peek() ) == "operator"
+		while ( identify_token( l.peek() ) == "operator"
 				|| identify_token( l.peek() ) == "comparator"
-				|| identify_token( l.peek() ) == "logical" )
+				|| identify_token( l.peek() ) == "logical"
+				|| l.peek() == ".." )
 		{
 			// Convert operator into D format
 			string op = l.pop();
@@ -964,20 +968,16 @@ class Parser
 				string haystack = expression_state( l.pop() );
 				return "contains(" ~ haystack ~ "," ~ expression ~ ")";
 			}
+			else if ( op == ".." )
+			{
+				add_function( "iota" );
+				return "iota(" ~ expression ~ "," ~ l.pop() ~ ")";
+			}
 
-			return expression ~ " " ~ op ~ " " ~ expression_state( l.pop() );
-		}
-		else if ( l.peek() == ".." )
-		{
-			l.pop();
-			add_function( "iota" );
-			return "iota(" ~ expression ~ "," ~ l.pop() ~ ")";
+			expression ~= " " ~ op ~ " " ~ expression_state( l.pop() );
 		}
 
-		if ( l.peek() == ")" && expression[0] == '(' )
-			return expression ~ l.pop();
-		else
-			return expression;
+		return expression;
 	}
 
 	/// Expecting the end of a line
