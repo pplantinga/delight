@@ -837,26 +837,16 @@ class Parser
 		if ( token == ")" )
 			return token;
 
-		switch ( identify_token( token ) )
-		{
-			case "string literal":
-			case "character literal":
-			case "number literal":
-			case "identifier":
-				// Check for array access
-				if ( l.peek() == "[" )
-					token ~= array_state( l.pop() );
-				
-				string next = l.pop();
-				if ( next == "," )
-					return token ~ ", " ~ function_call_state( l.pop() );
-				else if ( next == ")" )
-					return token ~ ")";
-				else
-					throw new Exception( expected( ",' or ')", next ) );
-			default:
-				throw new Exception( unexpected( token ) );
-		}
+		string expression = expression_state( token );
+
+		string next = l.pop();
+
+		if ( next == "," )
+			return expression ~ ", " ~ function_call_state( l.pop() );
+		else if ( next == ")" )
+			return expression ~ ")";
+		else
+			throw new Exception( expected( ",' or ')", next ) );
 	}
 
 	/// Array accesses can have multiple sets of brackets, no commas
@@ -984,7 +974,7 @@ class Parser
 			return "iota(" ~ expression ~ "," ~ l.pop() ~ ")";
 		}
 
-		if ( l.peek() == ")" )
+		if ( l.peek() == ")" && expression[0] == '(' )
 			return expression ~ l.pop();
 		else
 			return expression;
