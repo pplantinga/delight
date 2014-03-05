@@ -1144,10 +1144,14 @@ class Parser
 	string newline_state( string token )
 	{
 		string endline = endline();
-
+		
 		// Don't use a newline if token is 'begin'
 		if ( token == "begin" )
 			endline = "";
+		
+		// In the case of empty newline, don't use indentation
+		while ( !l.is_empty() && l.peek() == "\n" )
+			endline = l.pop() ~ endline;
 
 		// Don't use a bracket if token is 'begin' or 'newline'
 		// Nor if we're in a case: or default: context

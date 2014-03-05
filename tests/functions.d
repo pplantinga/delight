@@ -18,9 +18,9 @@ void subtractAdd(ref int a, ref int b)
 void main()
 {
 	int c = add(2, 1);
-	
+
 	int d = subtract!int(2, 1);
-	
+
 	subtractAdd(c, d);
 	
 	writeln(c);

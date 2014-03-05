@@ -6,16 +6,16 @@ void main()
 	int x = 1;
 	int y = 2;
 	int z = 4;
-	
+
 	if (x >= y && x > z - y)
 	{
 		x = y + z;
 	}
-	
+
 	else if (x == y + z || x + 2 != z)
 	{
 		y = z;
-		
+
 		if (y == 3)
 		{
 			z = x;
@@ -25,7 +25,7 @@ void main()
 			z = y;
 		}
 	}
-	
+
 	else if (!z)
 	{
 		y = 3;
@@ -34,12 +34,12 @@ void main()
 	{
 		z = x + y;
 	}
-	
+
 	if (contains(iota(0,3),2))
 	{
 		writeln("yes");
 	}
-	
+
 	switch (x)
 	{
 		case 1:
