@@ -28,7 +28,7 @@ syn keyword delightStructure     class enum this super
 syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while
 syn keyword delightConditional   if else switch case default
-syn keyword delightImport        import
+syn keyword delightImport        import from as
 syn keyword delightException     try except finally raise
 syn keyword delightOperator      and in is not or more less than equal to
 
@@ -128,7 +128,7 @@ syn keyword delightConstant NULL
 " Defs
 "
 
-hi def link delightDebug            Debug
+hi def link delightDebug            Statement
 hi def link delightScopeDecl        StorageClass
 hi def link delightStorageClass     StorageClass
 hi def link delightStatement        Statement
