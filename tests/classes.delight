@@ -1,4 +1,4 @@
-class test:
+class Test:
 	int myvar
 	this():
 		myvar = 5
@@ -6,13 +6,13 @@ class test:
 		abstract method addto( int a -> void ):
 			myvar += a
 
-class another(T):
+class Another(T):
 	T myvar
 
 	method addto( T a ):
 		myvar += a
 
-class tester <- test:
+class Tester <- Test:
 	this( int x ):
 		super()
 		myvar = x
@@ -21,9 +21,9 @@ class tester <- test:
 			myvar += a + 1
 
 procedure main:
-	tester a = new tester(10)
+	Tester a = new Tester(10)
 	a.myvar = 6
 	a.addto( 7 )
-	another!int b = new another!int()
+	Another!int b = new Another!int()
 	b.myvar = 8
 	b.addto( 9 )

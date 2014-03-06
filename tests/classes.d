@@ -1,4 +1,4 @@
-class test
+class Test
 {
 	int myvar;
 	this()
@@ -14,7 +14,7 @@ class test
 	}
 }
 
-class another(T)
+class Another(T)
 {
 	T myvar;
 	
@@ -24,7 +24,7 @@ class another(T)
 	}
 }
 
-class tester : test
+class Tester : Test
 {
 	this(int x)
 	{
@@ -42,10 +42,10 @@ class tester : test
 
 void main()
 {
-	tester a = new tester(10);
+	Tester a = new Tester(10);
 	a.myvar = 6;
 	a.addto(7);
-	another!int b = new another!int();
+	Another!int b = new Another!int();
 	b.myvar = 8;
 	b.addto(9);
 }

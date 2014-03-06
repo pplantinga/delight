@@ -157,6 +157,7 @@ class Parser
 			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
 			"attribute"           : regexify( attributes ),
 			"character literal"   : regex( `^'\\?.'$` ),
+			"class identifier"    : regex( `^[A-Z][A-Za-z_]+$` ),
 			"comparator"          : regexify( comparators ),
 			"conditional"         : regexify( conditionals ),
 			"constructor"         : regexify( constructors ),
@@ -314,10 +315,22 @@ class Parser
 			throw new Exception( expected( token, check ) );
 	}
 
+	void check_token( string check, string[] tokens )
+	{
+		if ( !canFind( tokens, check ) )
+			throw new Exception( expected( join( tokens, "' or '" ), check ) );
+	}
+
 	/// Check if this token is the right type
 	void check_token_type( string check, string type )
 	{
 		if ( identify_token( check ) != type )
+			throw new Exception( unexpected( check ) );
+	}
+
+	void check_token_type( string check, string[] types )
+	{
+		if ( !canFind( types, identify_token( check ) ) )
 			throw new Exception( unexpected( check ) );
 	}
 
@@ -345,21 +358,21 @@ class Parser
 					throw new Exception( unexpected( token ) );
 			case "function type":
 				return function_declaration_state( token );
+			case "class identifier":
+				return class_instance_state( token );
 			case "identifier":
 				string result = identifier_state( token );
-				string next = l.pop();
+
 				// Except for functions, check for assignment
 				if ( result[$-1] != ')'
-						&& identify_token( next ) == "assignment operator" )
-					return result ~ assignment_state( next );
-				else if ( identify_token( next ) == "identifier" )
-					return result ~ " " ~ next ~ class_instance_state( l.pop() );
-				else if ( result[$-1] == ')' && next == "\n" )
-					return result ~ ";" ~ endline_state( next );
-				else if ( next == "\n" )
-					return result ~ endline_state( next );
+						&& identify_token( l.peek() ) == "assignment operator" )
+					return result ~ assignment_state( l.pop() );
+				else if ( result[$-1] == ')' && l.peek() == "\n" )
+					return result ~ ";" ~ endline_state( l.pop() );
+				else if ( l.peek() == "\n" )
+					return result ~ endline_state( l.pop() );
 				else
-					throw new Exception( unexpected( next ) );
+					throw new Exception( unexpected( l.peek() ) );
 			case "punctuation":
 				if ( token == "#" || token == "#." )
 					return inline_comment_state( token );
@@ -463,10 +476,10 @@ class Parser
 		bool selective = token == "from";
 
 		string library;
-		if ( token == "import" || token == "from" )
-			library = parse_library( l.pop() );
-		else
-			throw new Exception( unexpected( token ) );
+
+		check_token( token, ["import", "from"] );
+
+		library = parse_library( l.pop() );
 
 		/// Renamed library
 		if ( l.peek() == "as" )
@@ -490,7 +503,7 @@ class Parser
 			string part;
 			while ( l.peek() != "\n" )
 			{
-				check_token_type( l.peek(), "identifier" );
+				check_token_type( l.peek(), ["identifier", "class identifier"] );
 				part = l.pop();
 
 				// Renamed import
@@ -768,7 +781,8 @@ class Parser
 
 		// For each type we encounter
 		while ( identify_token( l.peek() ) == "type"
-				|| identify_token( l.peek() ) == "template type" )
+				|| identify_token( l.peek() ) == "template type"
+				|| identify_token( l.peek() ) == "class identifier" )
 		{
 			// If we don't have this template type yet, add it to collection
 			if ( identify_token( l.peek() ) == "template type"
@@ -814,7 +828,7 @@ class Parser
 		
 		// return type must start with "-> type"
 		check_token( token, "->" );
-		check_token_type( l.peek(), "type" );
+		check_token_type( l.peek(), ["type", "class identifier"] );
 
 		string type = l.pop();
 
@@ -844,7 +858,7 @@ class Parser
 		
 			// template instance
 			case "!":
-				check_token_type( l.peek(), "type" );
+				check_token_type( l.peek(), ["type", "class identifier"] );
 				string identifier = token ~ "!" ~ l.pop();
 				if ( l.peek() == "(" )
 				{
@@ -950,13 +964,10 @@ class Parser
 					throw new Exception( unexpected( token ) );
 				break;
 			case "comparator":
-				if ( token == "not" )
-				{
-					expression = "!" ~ expression_state( l.pop() );
-					break;
-				}
-				else
-					throw new Exception( unexpected( token ) );
+				check_token( token, "not" );
+
+				expression = "!" ~ expression_state( l.pop() );
+				break;
 			default:
 				throw new Exception( unexpected( token ) );
 		}
@@ -1081,13 +1092,13 @@ class Parser
 	/// Inline comments just eat the rest of the line
 	string inline_comment_state( string token )
 	{
+		check_token( token, ["#", "#."] );
+
 		string result;
 		if ( token == "#" )
 			result = " // ";
 		else if ( token == "#." )
 			result = " /// ";
-		else
-			throw new Exception( expected( "#", token ) );
 
 		result ~= l.pop();
 
@@ -1098,7 +1109,7 @@ class Parser
 	string class_state( string token )
 	{
 		context.insertFront( "class" );
-		check_token_type( token, "identifier" );
+		check_token_type( token, "class identifier" );
 
 		string result = token;
 
@@ -1112,7 +1123,7 @@ class Parser
 		else if ( l.peek() == "<-" )
 		{
 			l.pop();
-			check_token_type( l.peek(), "identifier" );
+			check_token_type( l.peek(), "class identifier" );
 			result ~= " : " ~ l.pop();
 		}
 			
@@ -1139,20 +1150,33 @@ class Parser
 
 	string class_instance_state( string token )
 	{
-		check_token( token, "=" );
-		check_token( l.peek(), "new" );
+		check_token_type( token, "class identifier" );
+		string result = token;
 
-		string result = " " ~ token ~ " " ~ l.pop();
-
-		check_token_type( l.peek(), "identifier" );
-		result ~= " " ~ l.pop();
-
-		// template instance
+		// Check for template
+		bool is_template;
 		if ( l.peek() == "!" )
 		{
+			is_template = true;
 			result ~= l.pop();
-			check_token_type( l.peek(), "type" );
+			check_token_type( token, ["type", "class identifier"] );
 			result ~= l.pop();
+		}
+
+		token = l.pop();
+		check_token_type( token, "identifier" );
+		check_token( l.pop(), "=" );
+		check_token( l.pop(), "new" );
+		check_token_type( l.peek(), "class identifier" );
+
+		result ~= " " ~ token ~ " = new " ~ l.pop();
+
+		// template instance
+		if ( is_template )
+		{
+			check_token( l.pop(), "!" );
+			check_token_type( l.peek(), ["type", "class identifier"] );
+			result ~= "!" ~ l.pop();
 		}
 
 		check_token( l.pop(), "(" );
