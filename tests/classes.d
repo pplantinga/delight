@@ -1,6 +1,10 @@
 class test
 {
-	int myvar = 5;
+	int myvar;
+	this()
+	{
+		myvar = 5;
+	}
 	protected
 	{
 		abstract void addto(int a)
@@ -22,6 +26,11 @@ class another(T)
 
 class tester : test
 {
+	this(int x)
+	{
+		super();
+		myvar = x;
+	}
 	override
 	{
 		void addto(int a)
@@ -33,7 +42,7 @@ class tester : test
 
 void main()
 {
-	tester a = new tester();
+	tester a = new tester(10);
 	a.myvar = 6;
 	a.addto(7);
 	another!int b = new another!int();

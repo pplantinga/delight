@@ -1,5 +1,7 @@
 class test:
-	int myvar = 5
+	int myvar
+	this():
+		myvar = 5
 	protected:
 		abstract method addto( int a -> void ):
 			myvar += a
@@ -11,12 +13,15 @@ class another(T):
 		myvar += a
 
 class tester <- test:
+	this( int x ):
+		super()
+		myvar = x
 	override:
 		method addto( int a -> void ):
 			myvar += a + 1
 
 procedure main:
-	tester a = new tester()
+	tester a = new tester(10)
 	a.myvar = 6
 	a.addto( 7 )
 	another!int b = new another!int()

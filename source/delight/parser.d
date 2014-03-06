@@ -77,6 +77,12 @@ class Parser
 		"switch"
 	];
 
+	/// Creating instances
+	auto constructors = [
+		"super",
+		"this"
+	];
+
 	/// Exception handling
 	auto exceptions = [
 		"try",
@@ -153,6 +159,7 @@ class Parser
 			"character literal"   : regex( `^'\\?.'$` ),
 			"comparator"          : regexify( comparators ),
 			"conditional"         : regexify( conditionals ),
+			"constructor"         : regexify( constructors ),
 			"exception"           : regexify( exceptions ),
 			"function type"       : regexify( function_types ),
 			"library"             : regexify( librarys ),
@@ -327,6 +334,8 @@ class Parser
 				return statement_state( token );
 			case "conditional":
 				return conditional_state( token );
+			case "constructor":
+				return constructor_state( token );
 			case "type":
 				return token ~ declare_state( l.pop() );
 			case "template type":
@@ -394,6 +403,20 @@ class Parser
 		return endline ~ newline_state( "indent" );
 	}
 
+	string constructor_state( string token )
+	{
+		// Enter constructor context
+		context.insertFront( token );
+
+		string args = parse_args( l.pop() );
+		check_token( l.pop(), ")" );
+
+		string endline = ";";
+		if ( l.peek() == ":" )
+			endline = colon_state( l.pop() );
+		
+		return token ~ "(" ~ args ~ ")" ~ endline;
+	}
 
 	string statement_state( string token )
 	{
@@ -1132,11 +1155,10 @@ class Parser
 			result ~= l.pop();
 		}
 
-		check_token( l.peek(), "(" );
-		result ~= "(" ~ parse_args( l.pop() );
-		check_token( l.pop(), ")" );
+		check_token( l.pop(), "(" );
+		result ~= "(" ~ function_call_state( l.pop() );
 
-		return result ~ ");";
+		return result ~ ";";
 	}
 
 
