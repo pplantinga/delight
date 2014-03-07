@@ -157,7 +157,7 @@ class Parser
 			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
 			"attribute"           : regexify( attributes ),
 			"character literal"   : regex( `^'\\?.'$` ),
-			"class identifier"    : regex( `^[A-Z][a-z_]+$` ),
+			"class identifier"    : regex( `^[A-Z][a-z][A-Za-z_]*$` ),
 			"comparator"          : regexify( comparators ),
 			"conditional"         : regexify( conditionals ),
 			"constant"            : regex( `^[A-Z_]{2,}$` ),
@@ -354,6 +354,14 @@ class Parser
 				return "immutable " ~ token ~ assignment_state( l.pop() );
 			case "type":
 				return token ~ declare_state( l.pop() );
+			case "class identifier":
+				if ( l.peek() == "!" )
+				{
+					token ~= l.pop();
+					check_token_type( l.peek(), ["type", "class identifier"] );
+					token ~= l.pop();
+				}
+				return token ~ declare_state( l.pop() );
 			case "template type":
 				if ( canFind( context.opSlice(), "template" ) )
 					return token ~ declare_state( l.pop() );
@@ -361,8 +369,6 @@ class Parser
 					throw new Exception( unexpected( token ) );
 			case "function type":
 				return function_declaration_state( token );
-			case "class identifier":
-				return class_instance_state( token );
 			case "identifier":
 				string result = identifier_state( token );
 
@@ -939,6 +945,10 @@ class Parser
 	string expression_state( string token )
 	{
 		string expression;
+
+		if ( token == "new" )
+			return instantiation_state( token );
+
 		switch ( identify_token( token ) )
 		{
 			case "string literal":
@@ -1017,6 +1027,23 @@ class Parser
 		}
 
 		return expression;
+	}
+
+	string instantiation_state( string token )
+	{
+		check_token( token, "new" );
+		check_token_type( l.peek(), "class identifier" );
+		string identifier = "new " ~ l.pop();
+		if ( l.peek() == "!" )
+		{
+			identifier ~= l.pop();
+			check_token_type( l.peek(), ["type", "class identifier"] );
+			identifier ~= l.pop();
+		}
+		
+		check_token( l.pop(), "(" );
+
+		return identifier ~ "(" ~ function_call_state( l.pop() );
 	}
 
 	/// Expecting the end of a line
@@ -1144,44 +1171,6 @@ class Parser
 		check_token( l.pop(), ")" );
 		return result ~ ")";
 	}
-
-	string class_instance_state( string token )
-	{
-		check_token_type( token, "class identifier" );
-		string result = token;
-
-		// Check for template
-		bool is_template;
-		if ( l.peek() == "!" )
-		{
-			is_template = true;
-			result ~= l.pop();
-			check_token_type( token, ["type", "class identifier"] );
-			result ~= l.pop();
-		}
-
-		token = l.pop();
-		check_token_type( token, "identifier" );
-		check_token( l.pop(), "=" );
-		check_token( l.pop(), "new" );
-		check_token_type( l.peek(), "class identifier" );
-
-		result ~= " " ~ token ~ " = new " ~ l.pop();
-
-		// template instance
-		if ( is_template )
-		{
-			check_token( l.pop(), "!" );
-			check_token_type( l.peek(), ["type", "class identifier"] );
-			result ~= "!" ~ l.pop();
-		}
-
-		check_token( l.pop(), "(" );
-		result ~= "(" ~ function_call_state( l.pop() );
-
-		return result ~ ";";
-	}
-
 
 	/// Newlines keep indent and stuff
 	string newline_state( string token )
