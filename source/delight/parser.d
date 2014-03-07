@@ -689,21 +689,24 @@ class Parser
 		{
 			result = "[";
 
-			while ( identify_token( l.peek() ) != "identifier" )
+			while ( l.peek() != "]" )
 			{
-				if ( identify_token( l.peek() ) == "number literal"
-						|| identify_token( l.peek() ) == "type" )
+				if ( identify_token( l.peek() ) == "type" )
 					result ~= l.pop();
+				else if ( l.peek() != "," )
+					result ~= expression_state( l.pop() );
 
-				string next = l.pop();
-				if ( next == "," )
+				if ( l.peek() == "," )
+				{
 					result ~= "][";
-				else if ( next == "]" )
-					result ~= "]";
-				else
-					throw new Exception( expected( ",' or ']", next ) );
+					l.pop();
+				}
 			}
 
+			// End bracket
+			result ~= l.pop();
+
+			// Array identifier
 			token = l.pop();
 		}
 
