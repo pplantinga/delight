@@ -157,9 +157,10 @@ class Parser
 			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
 			"attribute"           : regexify( attributes ),
 			"character literal"   : regex( `^'\\?.'$` ),
-			"class identifier"    : regex( `^[A-Z][A-Za-z_]+$` ),
+			"class identifier"    : regex( `^[A-Z][a-z_]+$` ),
 			"comparator"          : regexify( comparators ),
 			"conditional"         : regexify( conditionals ),
+			"constant"            : regex( `^[A-Z_]{2,}$` ),
 			"constructor"         : regexify( constructors ),
 			"exception"           : regexify( exceptions ),
 			"function type"       : regexify( function_types ),
@@ -349,6 +350,8 @@ class Parser
 				return conditional_state( token );
 			case "constructor":
 				return constructor_state( token );
+			case "constant":
+				return "immutable " ~ token ~ assignment_state( l.pop() );
 			case "type":
 				return token ~ declare_state( l.pop() );
 			case "template type":
@@ -841,7 +844,7 @@ class Parser
 	/// Determine what kind of variable this is. 
 	string identifier_state( string token )
 	{
-		check_token_type( token, "identifier" );
+		check_token_type( token, ["identifier", "constant"] );
 
 		if ( !canFind( ["(", "[", "!", "."], l.peek() ) )
 			return token;
@@ -952,6 +955,7 @@ class Parser
 				expression = token;
 				break;
 			case "identifier":
+			case "constant":
 				expression = identifier_state( token );
 				break;
 			case "punctuation":
