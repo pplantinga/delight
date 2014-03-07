@@ -975,6 +975,12 @@ class Parser
 
 				expression = "!" ~ expression_state( l.pop() );
 				break;
+
+			case "operator":
+				check_token( token, "-" );
+
+				expression = "-" ~ expression_state( l.pop() );
+				break;
 			default:
 				throw new Exception( unexpected( token ) );
 		}
