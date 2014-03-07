@@ -10,6 +10,7 @@ void main()
 	catch (Exception e)
 	{
 		a = b + 2;
+		throw new Exception("Weird");
 	}
 	finally
 	{

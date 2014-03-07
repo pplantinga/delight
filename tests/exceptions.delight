@@ -6,5 +6,6 @@ procedure main:
 		raise "This is an exception"
 	except Exception e:
 		a = b + 2
+		raise new Exception( "Weird" )
 	finally:
 		a = b + 3

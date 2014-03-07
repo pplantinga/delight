@@ -460,8 +460,12 @@ class Parser
 			case "raise":
 				if ( identify_token( l.peek() ) == "string literal" )
 					return "throw new Exception(" ~ l.pop() ~ ");";
-				else
-					return "throw " ~ expression_state( l.pop() ) ~ ";";
+
+				check_token( l.pop(), "new" );
+				string exception = l.pop();
+				check_token_type( exception, "class identifier" );
+				
+				return "throw new " ~ exception ~ expression_state( l.pop() ) ~ ";";
 			case "print":
 				add_function( "print" );
 				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
