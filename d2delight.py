@@ -11,7 +11,7 @@ with open( sys.argv[1], 'r' ) as file:
 	content = file.read()
 
 content = re.sub( r'(import.*);', r'\1', content )
-content = re.sub( r'\b(?!void|new)([a-z]+) ([a-zA-Z0-9_]+\(.*)\)', r'function \2-> \1 ):', content )
+content = re.sub( r'\b(?!void|new|return)([a-z]+) ([a-zA-Z0-9_]+\(.*)\)', r'function \2-> \1 ):', content )
 content = re.sub( r'void ([a-zA-Z0-9_]*\(.*\))', r'procedure \1:', content )
 content = re.sub( r'\n([ \t]*)for\s*\(\s*(.*);\s*(.*);\s*(.*[^ ])\s*\)', r'\n\1\2\n\1while \3:\n\1\t\4;', content )
 content = re.sub( r'foreach\s*\(\s*(.*);\s*(.*[^ ])\s*\)', r'for \1 in \2:', content )
