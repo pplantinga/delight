@@ -842,7 +842,7 @@ class Parser
 	/// Determine what kind of variable this is. 
 	string identifier_state( string token )
 	{
-		check_token_type( token, ["identifier", "constant"] );
+		check_token_type( token, ["identifier", "constant", "constructor"] );
 
 		if ( !canFind( ["(", "[", "!", "."], l.peek() ) )
 			return token;
@@ -958,6 +958,7 @@ class Parser
 				break;
 			case "identifier":
 			case "constant":
+			case "constructor":
 				expression = identifier_state( token );
 				break;
 			case "punctuation":
