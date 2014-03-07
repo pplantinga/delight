@@ -561,6 +561,7 @@ class Parser
 		check_token_type( token, "identifier" );
 
 		string result = token;
+		// If we're keeping track of the index
 		if ( l.peek() == "," )
 		{
 			result ~= l.pop() ~ " ";
@@ -570,21 +571,8 @@ class Parser
 
 		check_token( l.pop(), "in" );
 
-		result ~= "; ";
-
-		// Range of the form "1 .. 40"
-		if ( identify_token( l.peek() ) == "number literal" )
-		{
-			result ~= l.pop();
-			check_token( l.pop(), ".." );
-			result ~= " .. ";
-			check_token_type( l.peek(), "number literal" );
-			result ~= l.pop();
-			return "(" ~ result ~ ")" ~ colon_state( l.pop() );
-		}
-
 		// Parse array expression
-		result ~= expression_state( l.pop() );
+		result ~= "; " ~ expression_state( l.pop() );
 
 		return "(" ~ result ~ ")" ~ colon_state( l.pop() );
 	}
@@ -1017,7 +1005,8 @@ class Parser
 			else if ( op == ".." )
 			{
 				add_function( "iota" );
-				return "iota(" ~ expression ~ "," ~ l.pop() ~ ")";
+				string to = expression_state( l.pop() );
+				return "iota(" ~ expression ~ "," ~ to ~ ")";
 			}
 
 			expression ~= " " ~ op ~ " " ~ expression_state( l.pop() );
