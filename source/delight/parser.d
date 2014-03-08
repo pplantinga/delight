@@ -353,15 +353,9 @@ class Parser
 			case "constant":
 				return "immutable " ~ token ~ assignment_state( l.pop() );
 			case "type":
-				return token ~ declare_state( l.pop() );
 			case "class identifier":
-				if ( l.peek() == "!" )
-				{
-					token ~= l.pop();
-					check_token_type( l.peek(), ["type", "class identifier"] );
-					token ~= l.pop();
-				}
-				return token ~ declare_state( l.pop() );
+				string type = parse_type( token );
+				return type ~ declare_state( l.pop() );
 			case "template type":
 				if ( canFind( context.opSlice(), "template" ) )
 					return token ~ declare_state( l.pop() );
@@ -793,11 +787,7 @@ class Parser
 					&& std.string.indexOf( template_types, l.peek()[0] ) == -1 )
 				template_types ~= l.peek() ~ ", ";
 
-			string type = l.pop();
-
-			// If type is array
-			if ( l.peek() == "[" )
-				type ~= array_state( l.pop() );
+			string type = parse_type( l.pop() );
 
 			// Add ref to procedures
 			if ( context.front == "procedure" )
@@ -832,14 +822,59 @@ class Parser
 		
 		// return type must start with "-> type"
 		check_token( token, "->" );
-		check_token_type( l.peek(), ["type", "class identifier"] );
 
-		string type = l.pop();
+		string type = parse_type( l.pop() );
 
 		// We're done, make sure the function def is done
 		check_token( l.pop(), ")" );
 
 		return type;
+	}
+
+	string parse_type( string token )
+	{
+		check_token_type( token, ["type", "class identifier", "template type"] );
+
+		string type = token;
+
+		if ( ( identify_token( token ) == "type"
+					|| identify_token( token ) == "template type" )
+				&& l.peek() == "[" )
+			type ~= array_declaration_state( l.pop() );
+
+		if ( identify_token( token ) == "class identifier" && l.peek() == "!" )
+		{
+			type ~= l.pop();
+			check_token_type( l.peek(), ["type", "class identifier"] );
+			type ~= l.pop();
+		}
+
+		return type;
+	}
+
+	string array_declaration_state( string token )
+	{
+		check_token( token, "[" );
+
+		string array_declaration = token;
+		while ( l.peek() != "]" )
+		{
+			if ( identify_token( l.peek() ) == "type" )
+				array_declaration ~= l.pop();
+
+			if ( l.peek() != "," && l.peek() != "]" )
+				array_declaration ~= expression_state( l.pop() );
+
+			check_token( l.peek(), ["]", ","] );
+			
+			if ( l.peek() == "," )
+			{
+				l.pop();
+				array_declaration ~= "][";
+			}
+		}
+
+		return array_declaration ~ l.pop();
 	}
 
 	/// Determine what kind of variable this is. 
@@ -1043,13 +1078,7 @@ class Parser
 	{
 		check_token( token, "new" );
 		check_token_type( l.peek(), "class identifier" );
-		string identifier = "new " ~ l.pop();
-		if ( l.peek() == "!" )
-		{
-			identifier ~= l.pop();
-			check_token_type( l.peek(), ["type", "class identifier"] );
-			identifier ~= l.pop();
-		}
+		string identifier = "new " ~ parse_type( l.pop() );
 		
 		check_token( l.pop(), "(" );
 
