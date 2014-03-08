@@ -999,28 +999,30 @@ class Parser
 			case "constructor":
 				expression = identifier_state( token );
 				break;
-			case "punctuation":
-				// sub-expression in parentheses
-				if ( token == "(" )
-					expression = token ~ expression_state( l.pop() );
-				else if ( token == "[" )
-					expression = array_literal_state( token );
-				else
-					throw new Exception( unexpected( token ) );
-				break;
-			case "comparator":
-				check_token( token, "not" );
-
-				expression = "!" ~ expression_state( l.pop() );
-				break;
-
-			case "operator":
-				check_token( token, "-" );
-
-				expression = "-" ~ expression_state( l.pop() );
+			case "newline":
+				expression = newline_state( token ) ~ expression_state( l.pop() );
 				break;
 			default:
-				throw new Exception( unexpected( token ) );
+				switch( token )
+				{
+					case "not":
+						expression = "!" ~ expression_state( l.pop() );
+						break;
+					case "[":
+						expression = array_literal_state( token );
+						break;
+					case "-":
+					case "(":
+						expression = token ~ expression_state( l.pop() );
+						break;
+					case "#":
+					case "#.":
+						expression = block_state( token );
+						expression ~= expression_state( l.pop() );
+						break;
+					default:
+						throw new Exception( unexpected( token ) );
+				}
 		}
 
 		if ( l.peek() == ")" && expression[0] == '(' )
