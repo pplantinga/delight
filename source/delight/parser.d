@@ -310,26 +310,14 @@ class Parser
 	}
 
 	/// Check if this token is right
-	void check_token( string check, string token )
-	{
-		if ( check != token )
-			throw new Exception( expected( token, check ) );
-	}
-
-	void check_token( string check, string[] tokens )
+	void check_token( string check, string[] tokens... )
 	{
 		if ( !canFind( tokens, check ) )
 			throw new Exception( expected( join( tokens, "' or '" ), check ) );
 	}
 
 	/// Check if this token is the right type
-	void check_token_type( string check, string type )
-	{
-		if ( identify_token( check ) != type )
-			throw new Exception( unexpected( check ) );
-	}
-
-	void check_token_type( string check, string[] types )
+	void check_token_type( string check, string[] types... )
 	{
 		if ( !canFind( types, identify_token( check ) ) )
 			throw new Exception( unexpected( check ) );
@@ -484,7 +472,7 @@ class Parser
 
 		string library;
 
-		check_token( token, ["import", "from"] );
+		check_token( token, "import", "from" );
 
 		library = parse_library( l.pop() );
 
@@ -510,7 +498,7 @@ class Parser
 			string part;
 			while ( l.peek() != "\n" )
 			{
-				check_token_type( l.peek(), ["identifier", "class identifier"] );
+				check_token_type( l.peek(), "identifier", "class identifier" );
 				part = l.pop();
 
 				// Renamed import
@@ -833,7 +821,7 @@ class Parser
 
 	string parse_type( string token )
 	{
-		check_token_type( token, ["type", "class identifier", "template type"] );
+		check_token_type( token, "type", "class identifier", "template type" );
 
 		string type = token;
 
@@ -845,7 +833,7 @@ class Parser
 		if ( identify_token( token ) == "class identifier" && l.peek() == "!" )
 		{
 			type ~= l.pop();
-			check_token_type( l.peek(), ["type", "class identifier"] );
+			check_token_type( l.peek(), "type", "class identifier" );
 			type ~= l.pop();
 		}
 
@@ -865,7 +853,7 @@ class Parser
 			if ( l.peek() != "," && l.peek() != "]" )
 				array_declaration ~= expression_state( l.pop() );
 
-			check_token( l.peek(), ["]", ","] );
+			check_token( l.peek(), "]", "," );
 			
 			if ( l.peek() == "," )
 			{
@@ -880,7 +868,7 @@ class Parser
 	/// Determine what kind of variable this is. 
 	string identifier_state( string token )
 	{
-		check_token_type( token, ["identifier", "constant", "constructor"] );
+		check_token_type( token, "identifier", "constant", "constructor" );
 
 		if ( !canFind( ["(", "[", "!", "."], l.peek() ) )
 			return token;
@@ -897,7 +885,7 @@ class Parser
 		
 			// template instance
 			case "!":
-				check_token_type( l.peek(), ["type", "class identifier"] );
+				check_token_type( l.peek(), "type", "class identifier" );
 				string identifier = token ~ "!" ~ l.pop();
 				if ( l.peek() == "(" )
 				{
@@ -1157,7 +1145,7 @@ class Parser
 	/// Inline comments just eat the rest of the line
 	string inline_comment_state( string token )
 	{
-		check_token( token, ["#", "#."] );
+		check_token( token, "#", "#." );
 
 		string result;
 		if ( token == "#" )
