@@ -1,4 +1,3 @@
-import std.algorithm : iota;
 void main()
 {
 	int[] arr = [1, 2, 3];
@@ -8,7 +7,7 @@ void main()
 		y += x;
 	}
 
-	foreach (j; iota(0,5))
+	foreach (j; 0 .. 5)
 	{
 		y -= j;
 		if (y < 0)

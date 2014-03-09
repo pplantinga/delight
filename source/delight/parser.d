@@ -881,7 +881,7 @@ class Parser
 			
 			// Array access
 			case "[":
-				return token ~ array_state( "[" );
+				return token ~ array_access_state( "[" );
 		
 			// template instance
 			case "!":
@@ -922,22 +922,14 @@ class Parser
 	}
 
 	/// Array accesses can have multiple sets of brackets, no commas
-	string array_state( string token )
+	string array_access_state( string token )
 	{
 		check_token( token, "[" );
 		
 		string result = token;
 		while ( l.peek() != "]" )
 		{
-			token = l.pop();
-			if ( l.peek() == ".." )
-			{
-				result ~= token ~ " " ~ l.pop() ~ " ";
-				result ~= l.pop();
-				continue;
-			}
-			
-			result ~= expression_state( token );
+			result ~= expression_state( l.pop() );
 			
 			if ( l.peek() == "," )
 			{
@@ -946,6 +938,7 @@ class Parser
 			}
 		}
 
+		// Add end bracket
 		return result ~ l.pop();
 	}
 
@@ -1050,12 +1043,6 @@ class Parser
 				add_function( "contains" );
 				string haystack = expression_state( l.pop() );
 				return "contains(" ~ haystack ~ "," ~ expression ~ ")";
-			}
-			else if ( op == ".." )
-			{
-				add_function( "iota" );
-				string to = expression_state( l.pop() );
-				return "iota(" ~ expression ~ "," ~ to ~ ")";
 			}
 
 			expression ~= " " ~ op ~ " " ~ expression_state( l.pop() );
@@ -1318,9 +1305,6 @@ class Parser
 				break;
 			case "print":
 				includes ~= "import std.stdio : writeln;\n";
-				break;
-			case "iota":
-				includes ~= "import std.algorithm : iota;\n";
 				break;
 			default:
 		}

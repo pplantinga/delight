@@ -1,5 +1,4 @@
 bool contains(H,N)(H h,N n){foreach(i;h)if(i==n)return true;return false;}
-import std.algorithm : iota;
 import std.stdio : writeln;
 void main()
 {
@@ -35,7 +34,8 @@ void main()
 		z = x + y;
 	}
 
-	if (contains(iota(0,3),2))
+	int[] a = [1, 2, 5];
+	if (contains(a,2))
 	{
 		writeln("yes");
 	}

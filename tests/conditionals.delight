@@ -19,7 +19,8 @@ procedure main:
 	else:
 		z = x + y
 
-	if 2 in 0 .. 3:
+	int[] a = [1, 2, 5]
+	if 2 in a:
 		print "yes"
 
 	switch x:
