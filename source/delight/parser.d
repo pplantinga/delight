@@ -168,8 +168,8 @@ class Parser
 			"logical"             : regexify( logical ),
 			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
 			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
-			"operator"            : regex( `^[+*%^/~-]$` ),
-			"punctuation"         : regex( `^([.,!:()\[\]#]|\.\.|#\.|->)$` ),
+			"operator"            : regex( `^([+*%^/~-]|\.\.)$` ),
+			"punctuation"         : regex( `^([.,!:()\[\]#]|#\.|->)$` ),
 			"statement"           : regexify( statements ),
 			"string literal"      : regex( `^".*"$` ),
 			"template type"       : regex( `^[A-Z]$` ),
@@ -237,12 +237,12 @@ class Parser
 		assert( p.identify_token( "5.2" ) == "number literal" );
 		assert( p.identify_token( "-" ) == "operator" );
 		assert( p.identify_token( "^" ) == "operator" );
+		assert( p.identify_token( ".." ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
 		assert( p.identify_token( ":" ) == "punctuation" );
 		assert( p.identify_token( "#" ) == "punctuation" );
 		assert( p.identify_token( "#." ) == "punctuation" );
 		assert( p.identify_token( "->" ) == "punctuation" );
-		assert( p.identify_token( ".." ) == "punctuation" );
 		assert( p.identify_token( "for" ) == "statement" );
 		assert( p.identify_token( `""` ) == "string literal" );
 		assert( p.identify_token( `"string"` ) == "string literal" );
@@ -1025,8 +1025,7 @@ class Parser
 
 		while ( identify_token( l.peek() ) == "operator"
 				|| identify_token( l.peek() ) == "comparator"
-				|| identify_token( l.peek() ) == "logical"
-				|| l.peek() == ".." )
+				|| identify_token( l.peek() ) == "logical" )
 		{
 			// Convert operator into D format
 			string op = l.pop();
