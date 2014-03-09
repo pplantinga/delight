@@ -409,15 +409,16 @@ class Parser
 
 	string constructor_state( string token )
 	{
-		// Enter constructor context
-		context.insertFront( token );
-
 		string args = parse_args( l.pop() );
 		check_token( l.pop(), ")" );
 
 		string endline = ";";
 		if ( l.peek() == ":" )
+		{
+			// Enter constructor context
+			context.insertFront( token );
 			endline = colon_state( l.pop() );
+		}
 		
 		return token ~ "(" ~ args ~ ")" ~ endline;
 	}
@@ -427,17 +428,16 @@ class Parser
 		switch ( token )
 		{
 			case "for":
-				return "foreach " ~ foreach_state( l.pop() );
+				return foreach_state( token );
 			case "while":
-				return "while (" ~ while_state( l.pop() ) ~ ")";
+				return while_state( token );
 			case "return":
 				return return_state( token );
 			case "assert":
 				return token ~ "(" ~ expression_state( l.pop() ) ~ ");";
 			case "unittest":
 				context.insertFront( "unittest" );
-				check_token( l.pop(), ":" );
-				return token;
+				return token ~ colon_state( l.pop() );
 			case "break":
 			case "continue":
 				if ( !canFind( context.opSlice(), "for" )
@@ -549,36 +549,36 @@ class Parser
 	/// Default loop state. Form is "for key, item in array"
 	string foreach_state( string token )
 	{
+		check_token( token, "for" );
 		context.insertFront( "for" );
-		check_token_type( token, "identifier" );
+		check_token_type( l.peek(), "identifier" );
 
-		string result = token;
+		string items = l.pop();
 		// If we're keeping track of the index
 		if ( l.peek() == "," )
 		{
-			result ~= l.pop() ~ " ";
+			items ~= l.pop() ~ " ";
 			check_token_type( l.peek(), "identifier" );
-			result ~= l.pop();
+			items ~= l.pop();
 		}
 
 		check_token( l.pop(), "in" );
 
 		// Parse array expression
-		result ~= "; " ~ expression_state( l.pop() );
+		string array = expression_state( l.pop() );
 
-		return "(" ~ result ~ ")" ~ colon_state( l.pop() );
+		return "foreach (" ~ items ~ "; " ~ array ~ ")" ~ colon_state( l.pop() );
 	}
 
 	/// Generic loop
 	string while_state( string token )
 	{
+		check_token( token, "while" );
 		context.insertFront( "while" );
 
-		string expression = expression_state( token );
+		string expression = expression_state( l.pop() );
 
-		check_token( l.pop(), ":" );
-
-		return expression;
+		return "while (" ~ expression ~ ")" ~ colon_state( l.pop() );
 	}
 
 	/// return statement
@@ -712,47 +712,34 @@ class Parser
 	/// This state takes care of function declaration
 	string function_declaration_state( string token )
 	{
-		// First check if we're a function, method, or procedure
-		string start;
-		switch ( token )
-		{
-			case "function":
-				context.insertFront( "function" );
-				start = "pure ";
-				break;
-			case "method":
-				// Methods can only live in classes and templates
-				if ( !canFind( context.opSlice(), "class" ) 
-						&& !canFind( context.opSlice(), "template" ) )
-					throw new Exception( unexpected( "method" ) );
+		// Methods can only live in classes and templates
+		if ( canFind( context.opSlice(), "class" ) 
+				|| canFind( context.opSlice(), "template" ) )
+			check_token( token, "method" );
+		else
+			check_token( token, "function", "procedure" );
 
-				context.insertFront( "method" );
-				start = "";
-				break;
-			case "procedure":
-				context.insertFront( "procedure" );
-				start = "void";
-				break;
-			default:
-				throw new Exception( unexpected( token ) );
-		}
+		// Enter appropriate context
+		context.insertFront( token );
 
 		// Must call the function something
 		check_token_type( l.peek(), "identifier" );
-
 		string name = l.pop();
-		string args, template_args, return_type;
+		string return_type = "void ";
+		string args;
 
+		// Check for arguments and a return type
 		if ( l.peek() == "(" )
 		{
 			args = parse_args( l.pop() );
-			return_type = parse_return_type( l.pop() );
+			return_type = parse_return_type( l.pop() ) ~ " ";
 		}
-		
-		// Function declarations must end with colon
-		check_token( l.pop(), ":" );
 
-		return start ~ return_type ~ " " ~ name ~ "(" ~ args ~ ")";
+		// Functions are pure functions
+		if ( token == "function" )
+			return_type = "pure " ~ return_type;
+		
+		return return_type ~ name ~ "(" ~ args ~ ")" ~ colon_state( l.pop() );
 	}
 
 
@@ -802,7 +789,7 @@ class Parser
 	{
 		// procedures have no return type
 		if ( context.front == "procedure" )
-			return "";
+			return "void";
 
 		// no return type, guess
 		if ( token == ")" )
