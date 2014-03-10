@@ -17,7 +17,7 @@ import std.stdio : writeln;
 import std.range : repeat;
 import std.regex;
 import std.string;
-import std.algorithm : canFind, startsWith;
+import std.algorithm : canFind, startsWith, balancedParens;
 import std.container : SList;
 
 class Parser
@@ -967,9 +967,6 @@ class Parser
 			case "constructor":
 				expression = identifier_state( token );
 				break;
-			case "newline":
-				expression = newline_state( token ) ~ expression_state( l.pop() );
-				break;
 			default:
 				switch( token )
 				{
@@ -988,13 +985,22 @@ class Parser
 						expression = block_state( token );
 						expression ~= expression_state( l.pop() );
 						break;
+					case "\n":
+						string newline = newline_state( token );
+						expression = newline ~ expression_state( l.pop() );
+						break;
+					case "indent":
+					case "dedent":
+						expression = expression_state( l.pop() );
+						break;
 					default:
 						throw new Exception( unexpected( token ) );
 				}
 		}
 
-		if ( l.peek() == ")" && expression[0] == '(' )
-			expression ~= l.pop();
+		// While there's unbalanced parentheses
+		// parse newlines, comments, and end parentheses
+		balance_parens( expression );
 
 		/// Contains conversions to D operators
 		string[string] conversion = [
@@ -1032,9 +1038,48 @@ class Parser
 			}
 
 			expression ~= " " ~ op ~ " " ~ expression_state( l.pop() );
+
+			balance_parens( expression );
 		}
 
 		return expression;
+	}
+
+	void balance_parens( ref string expression )
+	{
+		string[] valid_tokens = [
+			"\n",
+			"indent",
+			"dedent",
+			"#",
+			"#.",
+			")"
+		];
+
+		while ( canFind( valid_tokens, l.peek() )
+				&& !balancedParens( expression, '(', ')' ) )
+		{
+			switch ( l.peek() )
+			{
+				case "\n":
+					expression ~= newline_state( l.pop() );
+					break;
+				case "indent":
+				case "dedent":
+					l.pop();
+					break;
+				case "#":
+				case "#.":
+					expression ~= block_state( l.pop() );
+					writeln( l.peek() );
+					break;
+				case ")":
+					expression ~= l.pop();
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 	string instantiation_state( string token )
