@@ -447,7 +447,7 @@ class Parser
 					return token ~ ";";
 			case "raise":
 				if ( identify_token( l.peek() ) == "string literal" )
-					return "throw new Exception(" ~ l.pop() ~ ");";
+					return "throw new Exception(" ~ expression_state( l.pop() ) ~ ");";
 
 				check_token( l.pop(), "new" );
 				string exception = l.pop();
