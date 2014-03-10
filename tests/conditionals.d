@@ -40,6 +40,12 @@ void main()
 		writeln("yes");
 	}
 
+	int[string] b = ["a": 1, "b": 2];
+	if ("a" in b)
+	{
+		writeln("yes");
+	}
+
 	switch (x)
 	{
 		case 1:

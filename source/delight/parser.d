@@ -62,6 +62,7 @@ class Parser
 	auto comparators = [
 		"equal to",
 		"is",
+		"has key",
 		"less than",
 		"more than",
 		"not"
@@ -1065,7 +1066,14 @@ class Parser
 			{
 				add_function( "contains" );
 				string haystack = expression_state( l.pop() );
-				return "contains(" ~ haystack ~ "," ~ expression ~ ")";
+				expression = "contains(" ~ haystack ~ "," ~ expression ~ ")";
+				continue;
+			}
+			else if ( op == "has key" )
+			{
+				string key = expression_state( l.pop() );
+				expression = key ~ " in " ~ expression;
+				continue;
 			}
 
 			expression ~= " " ~ op ~ " " ~ expression_state( l.pop() );

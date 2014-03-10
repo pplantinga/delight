@@ -31,7 +31,11 @@ syn keyword delightRepeat        for while
 syn keyword delightConditional   if else switch case default
 syn keyword delightImport        import from as
 syn keyword delightException     try except finally raise
-syn keyword delightOperator      and is not or more less than equal to
+syn keyword delightOperator      and is not or
+syn match delightOperator        'has key'
+syn match delightOperator        'more than'
+syn match delightOperator        'less than'
+syn match delightOperator        'equal to'
 
 "
 " Comments

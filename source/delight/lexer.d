@@ -230,6 +230,7 @@ class Lexer
 			`less than`,             // two-word tokens
 			`more than`,
 			`equal to`,
+			`has key`,
 			`[A-Za-z_]+`,            // identifiers and keywords
 			`->`,                    // function return
 			`<-`,                    // inheritance

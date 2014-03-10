@@ -23,6 +23,10 @@ procedure main:
 	if 2 in a:
 		print "yes"
 
+	int[string] b = ["a": 1, "b": 2]
+	if b has key "a":
+		print "yes"
+
 	switch x:
 		case 1:
 		case 3:
