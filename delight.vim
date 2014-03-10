@@ -22,6 +22,7 @@ endfunction
 syn keyword delightDebug         unittest assert deprecated
 syn keyword delightScopeDecl     public protected private export package
 syn keyword delightStatement     break continue return print passthrough new
+syn keyword delightStatement     in out body
 syn keyword delightStorageClass  auto static override abstract ref scope
 syn keyword delightStorageClass  synchronized immutable lazy
 syn keyword delightStructure     class enum this super
@@ -30,7 +31,7 @@ syn keyword delightRepeat        for while
 syn keyword delightConditional   if else switch case default
 syn keyword delightImport        import from as
 syn keyword delightException     try except finally raise
-syn keyword delightOperator      and in is not or more less than equal to
+syn keyword delightOperator      and is not or more less than equal to
 
 "
 " Comments

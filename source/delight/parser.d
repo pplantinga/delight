@@ -61,7 +61,6 @@ class Parser
 	/// Compare and contrast, producing booleans.
 	auto comparators = [
 		"equal to",
-		"in",
 		"is",
 		"less than",
 		"more than",
@@ -81,6 +80,13 @@ class Parser
 	auto constructors = [
 		"super",
 		"this"
+	];
+
+	/// Contract programming
+	auto contracts = [
+		"in",
+		"out",
+		"body"
 	];
 
 	/// Exception handling
@@ -162,6 +168,7 @@ class Parser
 			"conditional"         : regexify( conditionals ),
 			"constant"            : regex( `^[A-Z_]{2,}$` ),
 			"constructor"         : regexify( constructors ),
+			"contract"            : regexify( contracts ),
 			"exception"           : regexify( exceptions ),
 			"function type"       : regexify( function_types ),
 			"library"             : regexify( librarys ),
@@ -219,6 +226,7 @@ class Parser
 		assert( p.identify_token( "'\\n'" ) == "character literal" );
 		assert( p.identify_token( "if" ) == "conditional" );
 		assert( p.identify_token( "else" ) == "conditional" );
+		assert( p.identify_token( "out" ) == "contract" );
 		assert( p.identify_token( "less than" ) == "comparator" );
 		assert( p.identify_token( "not" ) == "comparator" );
 		assert( p.identify_token( "equal to" ) == "comparator" );
@@ -340,6 +348,10 @@ class Parser
 				return constructor_state( token );
 			case "constant":
 				return "immutable " ~ token ~ assignment_state( l.pop() );
+			case "contract":
+				check_token_type( context.front, "function type" );
+				context.insertFront( token );
+				return token ~ colon_state( l.pop() );
 			case "type":
 			case "class identifier":
 				string type = parse_type( token );
@@ -739,7 +751,22 @@ class Parser
 		if ( token == "function" )
 			return_type = "pure " ~ return_type;
 		
-		return return_type ~ name ~ "(" ~ args ~ ")" ~ colon_state( l.pop() );
+		// Must end with a colon-newline-indent
+		string newline = colon_state( l.pop() );
+
+		// Check for contracts
+		if ( identify_token( l.peek() ) == "contract" )
+		{
+			// Enter context
+			context.insertFront( l.peek() );
+
+			// Replace newline + indent with just a newline
+			newline = endline();
+			newline ~= l.pop();
+			newline ~= colon_state( l.pop() );
+		}
+
+		return return_type ~ name ~ "(" ~ args ~ ")" ~ newline;
 	}
 
 
@@ -1018,7 +1045,8 @@ class Parser
 
 		while ( identify_token( l.peek() ) == "operator"
 				|| identify_token( l.peek() ) == "comparator"
-				|| identify_token( l.peek() ) == "logical" )
+				|| identify_token( l.peek() ) == "logical"
+				|| l.peek() == "in" )
 		{
 			// Convert operator into D format
 			string op = l.pop();
