@@ -3,7 +3,7 @@ void main()
 	string greeting = "Hello";
 	greeting ~= ", world!";
 
-	immutable THE_CONSTANT = "Never gonna change";
+	static immutable THE_CONSTANT = "Never gonna change";
 
 	auto x = 5;
 	x -= 2;
