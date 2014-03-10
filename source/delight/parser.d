@@ -347,7 +347,7 @@ class Parser
 			case "constructor":
 				return constructor_state( token );
 			case "constant":
-				return "immutable " ~ token ~ assignment_state( l.pop() );
+				return "static immutable " ~ token ~ assignment_state( l.pop() );
 			case "contract":
 				check_token_type( context.front, "function type" );
 				context.insertFront( token );
@@ -752,16 +752,17 @@ class Parser
 			return_type = "pure " ~ return_type;
 		
 		// Must end with a colon-newline-indent
-		string newline = colon_state( l.pop() );
+		check_token( l.pop(), ":" );
+		check_token( l.pop(), "\n" );
+		string newline = endline();
 
 		// Check for contracts
 		if ( identify_token( l.peek() ) == "contract" )
 		{
 			// Enter context
-			context.insertFront( l.peek() );
+			if ( l.peek() != "body" )
+				context.insertFront( l.peek() );
 
-			// Replace newline + indent with just a newline
-			newline = endline();
 			newline ~= l.pop();
 			newline ~= colon_state( l.pop() );
 		}
