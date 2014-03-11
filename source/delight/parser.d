@@ -296,17 +296,18 @@ class Parser
 		import std.file : read;
 
 		string[] tests = [
-			"import",
-			"comments",
-			"assignment",
-			"indent",
-			"functions",
-			"conditionals",
 			"arrays",
-			"loops",
+			"assignment",
+			"classes",
+			"comments",
+			"conditionals",
 			"exceptions",
-			"unittests",
-			"classes"
+			"functions",
+			"import",
+			"indent",
+			"loops",
+			"passthrough",
+			"unittests"
 		];
 
 		foreach ( test; tests )
@@ -606,9 +607,8 @@ class Parser
 	/// This code gets passed to D as is
 	string passthrough_state( string token )
 	{
-		int level = l.indentation_level;
-		check_token( l.pop(), ":" );
 		context.insertFront( "passthrough" );
+		check_token( l.pop(), ":" );
 
 		return block_state( token );
 	}
@@ -1187,17 +1187,17 @@ class Parser
 				if ( token == "passthrough" )
 					inside = join( repeat( l.indentation, level - 1 ) );
 				else
-					inside = join( repeat( "  ", level - 1 ) );
+					inside = " " ~ join( repeat( "  ", level - 1 ) );
 				
-				token = l.pop();
-				if ( token == "\n" )
+				string next = l.pop();
+				if ( next == "\n" )
 					result ~= "\n" ~ indent;
-				else if ( token == "indent" )
+				else if ( next == "indent" )
 					level += 1;
-				else if ( token == "dedent" )
+				else if ( next == "dedent" )
 					level -= 1;
 				else
-					result ~= " " ~ inside ~ token;
+					result ~= inside ~ next;
 			}
 		}
 
