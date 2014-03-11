@@ -894,6 +894,10 @@ class Parser
 		check_token_type( token, "identifier", "constant", "constructor" );
 
 		string identifier = token;
+		
+		// Constants are lowercase in D
+		if ( token == "NULL" || token == "TRUE" || token == "FALSE" )
+			identifier = toLower( token );
 
 		while ( canFind( ["(", "[", "!", "."], l.peek() ) )
 		{

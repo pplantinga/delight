@@ -4,6 +4,10 @@ procedure main:
 
 	THE_CONSTANT = "Never gonna change"
 
+	int[] not_constant = NULL
+	bool the_truth = TRUE
+	bool not_the_truth = FALSE
+
 	auto x = 5
 	x -= 2
 	x += 4
