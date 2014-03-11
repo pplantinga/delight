@@ -351,9 +351,8 @@ class Parser
 			case "constant":
 				return "static immutable " ~ token ~ assignment_state( l.pop() );
 			case "contract":
-				check_token_type( context.front, "function type" );
-				context.insertFront( token );
-				return token ~ colon_state( l.pop() );
+				return contract_state( token );
+				
 			case "type":
 			case "class identifier":
 				string type = parse_type( token );
@@ -435,6 +434,21 @@ class Parser
 		}
 		
 		return token ~ "(" ~ args ~ ")" ~ endline;
+	}
+
+	string contract_state( string token )
+	{
+		check_token_type( context.front, "function type" );
+
+		// Enter context, body context is taken care of by function dec
+		if ( token != "body" )
+			context.insertFront( token );
+
+		// parse result token
+		if ( token == "out" && identify_token( l.peek() ) == "identifier" )
+			token ~= " (" ~ l.pop() ~ ")";
+
+		return token ~ colon_state( l.pop() );
 	}
 
 	string statement_state( string token )
@@ -759,14 +773,7 @@ class Parser
 
 		// Check for contracts
 		if ( identify_token( l.peek() ) == "contract" )
-		{
-			// Enter context
-			if ( l.peek() != "body" )
-				context.insertFront( l.peek() );
-
-			newline ~= l.pop();
-			newline ~= colon_state( l.pop() );
-		}
+			newline ~= contract_state( l.pop() );
 
 		return return_type ~ name ~ "(" ~ args ~ ")" ~ newline;
 	}

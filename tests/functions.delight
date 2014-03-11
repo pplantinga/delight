@@ -1,19 +1,24 @@
 function add(int a, b -> int):
 	return a + b
 
-function subtract(T a, b):
-	return a - b
+function divide(T a, b):
+in:
+	assert b not equal to 0
+out result:
+	assert result more than 0
+body:
+	return a / b
 
-procedure subtractAdd(int a, b):
-	a = subtract(a, b)
+procedure divideAdd(int a, b):
+	a = divide(a, b)
 	b = add(a, b)
 
 procedure main:
 	int c = add(2, 1)
 
-	int d = subtract!int(2, 1)
+	int d = divide!int(2, 1)
 	
-	subtractAdd(c, d)
+	divideAdd(c, d)
 
 	print c
 	print d

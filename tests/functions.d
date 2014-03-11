@@ -4,14 +4,23 @@ pure int add(int a, int b)
 	return a + b;
 }
 
-pure auto subtract(T)(T a, T b)
+pure auto divide(T)(T a, T b)
+in
 {
-	return a - b;
+	assert(b != 0);
+}
+out (result)
+{
+	assert(result > 0);
+}
+body
+{
+	return a / b;
 }
 
-void subtractAdd(ref int a, ref int b)
+void divideAdd(ref int a, ref int b)
 {
-	a = subtract(a, b);
+	a = divide(a, b);
 	b = add(a, b);
 }
 
@@ -19,9 +28,9 @@ void main()
 {
 	int c = add(2, 1);
 
-	int d = subtract!int(2, 1);
+	int d = divide!int(2, 1);
 
-	subtractAdd(c, d);
+	divideAdd(c, d);
 	
 	writeln(c);
 	writeln(d);
