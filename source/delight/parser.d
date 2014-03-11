@@ -754,12 +754,21 @@ class Parser
 		string name = l.pop();
 		string return_type = "void ";
 		string args;
-
+		
 		// Check for arguments and a return type
 		if ( l.peek() == "(" )
 		{
 			args = parse_args( l.pop() );
 			return_type = parse_return_type( l.pop() ) ~ " ";
+		}
+
+		// Check argument to main
+		if ( name == "main" && args != "" )
+		{
+			check_token( args, "ref string[] args" );
+
+			// Remove the ref, it's illegal in main
+			args = args[4 .. $];
 		}
 
 		// Functions are pure functions
