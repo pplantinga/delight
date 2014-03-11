@@ -1037,9 +1037,11 @@ class Parser
 		string[string] conversion = [
 			"and": "&&",
 			"or": "||",
+			"has key": "in",
 			"equal to": "==",
 			"less than": "<",
 			"more than": ">",
+			"not has key": "!in",
 			"not equal to": "!=",
 			"not less than": ">=",
 			"not more than": "<=",
@@ -1054,14 +1056,8 @@ class Parser
 		{
 			// Convert operator into D format
 			string op = l.pop();
-
-			// Not combines with the next token
-			if ( op == "not" )
-				op = "not " ~ l.pop();
-
-			if ( op in conversion )
-				op = conversion[op];
-
+			
+			// "in" means something different in delight
 			if ( op == "in" )
 			{
 				add_function( "contains" );
@@ -1069,10 +1065,19 @@ class Parser
 				expression = "contains(" ~ haystack ~ "," ~ expression ~ ")";
 				continue;
 			}
-			else if ( op == "has key" )
+			
+			// Not combines with the next token
+			if ( op == "not" )
+				op = "not " ~ l.pop();
+
+			if ( op in conversion )
+				op = conversion[op];
+
+			// Here we're after the conversion, so we're talking about D's "in"
+			if ( op == "in" || op == "!in" )
 			{
 				string key = expression_state( l.pop() );
-				expression = key ~ " in " ~ expression;
+				expression = key ~ " " ~ op ~ " " ~ expression;
 				continue;
 			}
 
