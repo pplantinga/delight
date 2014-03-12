@@ -612,10 +612,29 @@ class Parser
 	/// return statement
 	string return_state( string token )
 	{
-		if ( l.peek() == "\n" )
-			return token ~ ";";
-		else
-			return token ~ " " ~ expression_state( l.pop() ) ~ ";";
+		string next = l.pop();
+
+		string statement = "return";
+
+		if ( next != "\n" )
+		{
+			statement ~= " " ~ expression_state( next );
+			next = l.pop();
+		}
+
+		statement ~= ";" ~ endline_state( next );
+
+		// Ensure we don't write a "break" right after a "return"
+		if ( context.front == "case" && l.peek() == "dedent" )
+		{
+			string dedent = l.pop();
+			if ( l.peek() != "case" )
+				return statement ~ newline_state( dedent );
+			else
+				context.removeFront();
+		}
+
+		return statement;
 	}
 
 	/// This code gets passed to D as is
