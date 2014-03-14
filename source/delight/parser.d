@@ -813,20 +813,25 @@ class Parser
 		// Function params must start with "("
 		check_token( token, "(" );
 
-		string result;
+		string args;
 		string template_types;
 
 		// For each type we encounter
-		while ( identify_token( l.peek() ) == "type"
+		while ( identify_token( l.peek() ) == "attribute"
+				|| identify_token( l.peek() ) == "type"
 				|| identify_token( l.peek() ) == "template type"
 				|| identify_token( l.peek() ) == "class identifier" )
 		{
+			string type;
+			while ( identify_token( l.peek() ) == "attribute" )
+				type = l.pop() ~ " ";
+
 			// If we don't have this template type yet, add it to collection
 			if ( identify_token( l.peek() ) == "template type"
 					&& std.string.indexOf( template_types, l.peek()[0] ) == -1 )
 				template_types ~= l.peek() ~ ", ";
 
-			string type = parse_type( l.pop() );
+			type ~= parse_type( l.pop() );
 
 			// Add ref to procedures
 			if ( context.front == "procedure" )
@@ -835,17 +840,17 @@ class Parser
 			// For each identifier we encounter
 			while ( identify_token( l.peek() ) == "identifier" )
 			{
-				result ~= type ~ " " ~ l.pop();
+				args ~= type ~ " " ~ l.pop();
 				if ( l.peek() == "," )
-					result ~= l.pop() ~ " ";
+					args ~= l.pop() ~ " ";
 			}
 		}
 
 		// Add template types (minus the ending comma)
 		if ( template_types )
-			result = chomp( template_types, ", " ) ~ ")(" ~ result;
+			template_types = chomp( template_types, ", " ) ~ ")(";
 
-		return result;
+		return template_types ~ args;
 	}
 
 	/// Parse return type. If none, return auto
