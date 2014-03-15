@@ -1000,11 +1000,12 @@ class Parser
 		while ( l.peek() != "]" )
 		{
 			literal ~= expression_state( l.pop() );
+			literal ~= clear_tokens( ["\n", "indent", "dedent", "#", "#."] );
 
 			if ( l.peek() == "," || l.peek() == ":" )
 				literal ~= l.pop() ~ " ";
 			else
-				check_token( "]", l.peek() );
+				check_token( l.peek(), "]" );
 		}
 		
 		return literal ~ l.pop();
