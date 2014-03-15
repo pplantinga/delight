@@ -449,43 +449,57 @@ class Parser
 
 	string statement_state( string token )
 	{
+		string statement;
 		switch ( token )
 		{
 			case "for":
 				return foreach_state( token );
 			case "while":
 				return while_state( token );
-			case "return":
-				return return_state( token );
 			case "assert":
 				return token ~ "(" ~ expression_state( l.pop() ) ~ ");";
 			case "unittest":
 				context.insertFront( "unittest" );
 				return token ~ colon_state( l.pop() );
-			case "break":
-			case "continue":
-				if ( !canFind( context.opSlice(), "for" )
-						&& !canFind( context.opSlice(), "while" ) )
-					throw new Exception( unexpected( token ) );
-				else
-					return token ~ ";";
-			case "raise":
-				if ( identify_token( l.peek() ) == "string literal" )
-					return "throw new Exception(" ~ expression_state( l.pop() ) ~ ");";
-
-				check_token( l.pop(), "new" );
-				string exception = l.pop();
-				check_token_type( exception, "class identifier" );
-				
-				return "throw new " ~ exception ~ expression_state( l.pop() ) ~ ";";
 			case "print":
 				add_function( "print" );
 				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
 			case "passthrough":
 				return passthrough_state( token );
+
+			// The following cases end with "break" to continue execution
+			case "break":
+			case "continue":
+				statement = token ~ ";" ~ endline_state( l.pop() );
+				break;
+			case "raise":
+				statement = raise_state( token );
+				break;
+			case "return":
+				statement = return_state( token );
+				break;
 			default:
 				throw new Exception( unexpected( token ) );
 		}
+
+		// The only cases that should be left at this point
+		check_token( token, "break", "continue", "raise", "return" );
+
+		statement ~= clear_tokens( ["\n", "#", "#."] );
+
+		// Ensure we don't write an extra "break" in a "case" statement
+		if ( context.front == "case" && l.peek() == "dedent" )
+		{
+			string dedent = l.pop();
+			statement ~= clear_tokens( ["\n", "#", "#."] );
+			
+			if ( l.peek() != "case" && l.peek() != "default" )
+				return statement ~ newline_state( dedent );
+			else
+				context.removeFront();
+		}
+
+		return statement;
 	}
 
 	/// This state takes care of stuff after an import
@@ -608,29 +622,34 @@ class Parser
 	/// return statement
 	string return_state( string token )
 	{
-		string next = l.pop();
-
 		string statement = "return";
 
-		if ( next != "\n" )
+		if ( l.peek() != "\n" )
+			statement ~= " " ~ expression_state( l.pop() );
+
+		return statement ~ ";" ~ endline_state( l.pop() );
+	}
+
+	string raise_state( string token )
+	{
+		check_token( token, "raise" );
+
+		string exception;
+		if ( l.peek() == "new" )
 		{
-			statement ~= " " ~ expression_state( next );
-			next = l.pop();
+			l.pop();
+			check_token_type( l.peek(), "class identifier" );
+			exception = l.pop();
+			check_token( l.pop(), "(" );
+			exception ~= "(" ~ expression_state( l.pop() ) ~ ");";
+			check_token( l.pop(), ")" );
+		}
+		else
+		{
+			exception = "Exception(" ~ expression_state( l.pop() ) ~ ");";
 		}
 
-		statement ~= ";" ~ endline_state( next );
-
-		// Ensure we don't write a "break" right after a "return"
-		if ( context.front == "case" && l.peek() == "dedent" )
-		{
-			string dedent = l.pop();
-			if ( l.peek() != "case" )
-				return statement ~ newline_state( dedent );
-			else
-				context.removeFront();
-		}
-
-		return statement;
+		return "throw new " ~ exception ~ endline_state( l.pop() );
 	}
 
 	/// This code gets passed to D as is
@@ -1044,7 +1063,8 @@ class Parser
 
 		// While there's unbalanced parentheses
 		// parse newlines, comments, and end parentheses
-		balance_parens( expression );
+		if ( !balancedParens( expression, '(', ')' ) )
+			balance_parens( expression );
 
 		/// Contains conversions to D operators
 		string[string] conversion = [
@@ -1096,7 +1116,8 @@ class Parser
 
 			expression ~= " " ~ op ~ " " ~ expression_state( l.pop() );
 
-			balance_parens( expression );
+			if ( !balancedParens( expression, '(', ')' ) )
+				balance_parens( expression );
 		}
 
 		return expression;
@@ -1110,13 +1131,26 @@ class Parser
 			"dedent",
 			"#",
 			"#.",
-			")"
 		];
 
-		while ( canFind( valid_tokens, l.peek() )
-				&& !balancedParens( expression, '(', ')' ) )
+		expression ~= clear_tokens( valid_tokens );
+
+		if ( l.peek() == ")" && !balancedParens( expression, '(', ')' ) )
 		{
-			switch ( l.peek() )
+			expression ~= l.pop();
+
+			// If we're still not balanced, go around again
+			if ( !balancedParens( expression, '(', ')' ) )
+				balance_parens( expression );
+		}
+	}
+	
+	string clear_tokens( string[] tokens )
+	{
+		string expression;
+		while ( canFind( tokens, l.peek() ) )
+		{
+			switch( l.peek() )
 			{
 				case "\n":
 					expression ~= newline_state( l.pop() );
@@ -1129,13 +1163,11 @@ class Parser
 				case "#.":
 					expression ~= block_state( l.pop() );
 					break;
-				case ")":
-					expression ~= l.pop();
-					break;
 				default:
 					break;
 			}
 		}
+		return expression;
 	}
 
 	string instantiation_state( string token )

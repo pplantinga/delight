@@ -51,9 +51,12 @@ void main()
 		case 1:
 		case 3:
 			x = 2;
-			break;
+			return;
 		case 2:
 			x = 3;
+			throw new Exception("Some error");
+		case 4:
+			x = 9;
 			break;
 		default:
 			x = 5;

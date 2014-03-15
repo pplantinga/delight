@@ -31,7 +31,11 @@ procedure main:
 		case 1:
 		case 3:
 			x = 2
+			return
 		case 2:
 			x = 3
+			raise "Some error"
+		case 4:
+			x = 9
 		default:
 			x = 5
