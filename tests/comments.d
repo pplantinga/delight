@@ -13,9 +13,7 @@
 
 void main()
 {
-	/++
-	 + indented docblock
-	 +/
+	/// indented docblock
 	int x = 5; // inline
 	int y = 6; /// inline doc
 }

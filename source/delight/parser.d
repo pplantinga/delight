@@ -1192,21 +1192,18 @@ class Parser
 	/// Blocks eat the rest of the input until it un-indents
 	string block_state( string token )
 	{
-		string block, end;
+		string begin, block, end;
 		string indent = join( repeat( l.indentation, l.block_level ) );
 
 		// If this is a comment block
 		if ( token != "passthrough" )
 		{
-			// Format nicely
-			indent ~= " +";
-
 			// First line has opening "/+"
-			block = "/+";
+			begin = "/+";
 			if ( token == "#." )
-				block = "/++";
+				begin = "/++";
 
-			block ~= "\n" ~ indent ~ " ";
+			begin ~= "\n" ~ indent ~ " + ";
 
 			// Closing "+/"
 			end = "/";
@@ -1217,14 +1214,22 @@ class Parser
 			block ~= l.pop();
 
 		// Add newline to the result
-		block ~= l.pop() ~ indent;
+		block ~= l.pop();
 
 		// If we're going into scope, 
 		if ( l.peek() == "indent" )
 		{
+			// Begin every line with "+" 
+			if ( token != "passthrough" )
+				indent ~= " +";
+			
+			// Add indent
 			l.pop();
+			block ~= indent;
+
 			string inside;
 			int level = 1;
+			
 			while ( level > 0 )
 			{
 				/// Indentation inside the block
@@ -1245,8 +1250,16 @@ class Parser
 					block ~= inside ~ next;
 			}
 		}
+		else if ( token == "#." )
+		{
+			return "/// " ~ block ~ indent;
+		}
+		else
+		{
+			return "// " ~ block ~ indent;
+		}
 
-		return block ~ end ~ endline();
+		return begin ~ block ~ end ~ endline();
 	}
 
 	/// Inline comments just eat the rest of the line
