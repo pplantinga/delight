@@ -16,7 +16,7 @@ import std.container : DList;
 import std.array : join;
 import std.math : abs;
 import std.algorithm : startsWith;
-import std.string : strip;
+import std.string : strip, format;
 
 class Lexer
 {
@@ -174,10 +174,19 @@ class Lexer
 		// Check for indentation
 		auto whitespace_regex = regex( `^[\t| ]*` );
 		string whitespace = matchFirst( current_line, whitespace_regex ).hit;
+
 		current_line = replaceFirst( current_line, whitespace_regex, `` );
 		int level;
 		if ( indentation )
 			level = whitespace.length / indentation.length;
+		
+		// Check that whitespace is legal
+		string whitespace_error = "Whitespace error on line %s";
+		if ( level * indentation.length != whitespace.length )
+			throw new Exception( format( whitespace_error, line_number ) );
+		foreach ( character; whitespace )
+			if ( character != whitespace[0] )
+				throw new Exception( format( whitespace_error, line_number ) );
 
 		// indentation tokens
 		string token;
@@ -186,7 +195,7 @@ class Lexer
 		else
 			token = "indent";
 
-		for ( int i = 0; i < abs( level - indentation_level ); i++ )
+		foreach ( i; 0 .. abs( level - indentation_level ) )
 			tokens.insertFront( token );
 
 		// Check for stuff we won't parse (comments)
@@ -223,20 +232,20 @@ class Lexer
 		current_line = newlines ~ current_line;
 
 		string[] regexes = [
-			`#.*\n`,                 // inline comments
-			`".*?"`,                 // string literals
-			`'\\?.'`,                // character literals
-			`[0-9]+\.?[0-9]*`,       // number literals
-			`less than`,             // two-word tokens
+			`#.*\n`,                  // inline comments
+			`".*?"`,                  // string literals
+			`'\\?.'`,                 // character literals
+			`[0-9]+\.?[0-9]*`,        // number literals
+			`less than`,              // two-word tokens
 			`more than`,
 			`equal to`,
 			`has key`,
-			`[A-Za-z_]+`,            // identifiers and keywords
-			`->`,                    // function return
-			`<-`,                    // inheritance
-			`\.\.`,                  // range and slice operator
-			`[+*%/~^-]?=`,           // assignment operators
-			`[.,!:\[\]()+*~/%\n^$-]` // punctuation and operators
+			`[A-Za-z_]+`,             // identifiers and keywords
+			`->`,                     // function return
+			`<-`,                     // inheritance
+			`\.\.`,                   // range and slice operator
+			`[+*%/~^-]?=`,            // assignment operators
+			`[.,!:\[\]()+*~/%\n^$-;]` // punctuation and operators
 		];
 		/// The almighty token regex
 		auto r = regex( join( regexes, "|" ) );
@@ -245,6 +254,8 @@ class Lexer
 		{
 			if ( hit[0][0] == '#' )
 				parse_block( tokens, hit[0] );
+			else if ( hit[0] == ";" )
+				throw new Exception( format( "Illegal ';' line %s", line_number ) );
 			else
 				tokens.insertBack( hit );
 		}
