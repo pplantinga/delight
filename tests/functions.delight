@@ -1,6 +1,15 @@
 function add(int a, b -> int):
 	return a + b
 
+function args(
+	int a, b, c, d, e
+	double f, g
+	int[] so_many_args
+	->
+	int[,]
+):
+	return [[2],[3]]
+
 function divide(T a, b):
 in:
 	assert b not equal to 0

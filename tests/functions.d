@@ -4,6 +4,11 @@ pure int add(int a, int b)
 	return a + b;
 }
 
+pure int[][] args(int a, int b, int c, int d, int edouble f, double gint[] so_many_args)
+{
+	return [[2], [3]];
+}
+
 pure auto divide(T)(T a, T b)
 in
 {

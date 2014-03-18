@@ -766,6 +766,10 @@ class Parser
 		if ( l.peek() == "(" )
 		{
 			args = parse_args( l.pop() );
+
+			// Clear any unwanted tokens before the type
+			clear_tokens( ["\n", "#", "#."] );
+
 			return_type = parse_return_type( l.pop() ) ~ " ";
 		}
 
@@ -804,6 +808,8 @@ class Parser
 		string args;
 		string template_types;
 
+		clear_tokens( ["\n", "#", "#.", "indent"] );
+
 		// For each type we encounter
 		while ( identify_token( l.peek() ) == "attribute"
 				|| identify_token( l.peek() ) == "type"
@@ -832,6 +838,8 @@ class Parser
 				if ( l.peek() == "," )
 					args ~= l.pop() ~ " ";
 			}
+
+			clear_tokens( ["\n", "#", "#."] );
 		}
 
 		// Add template types (minus the ending comma)
@@ -851,11 +859,15 @@ class Parser
 		// no return type, guess
 		if ( token == ")" )
 			return "auto";
-		
+
 		// return type must start with "-> type"
 		check_token( token, "->" );
 
+		clear_tokens( ["\n"] );
+
 		string type = parse_type( l.pop() );
+
+		clear_tokens( ["\n", "dedent"] );
 
 		// We're done, make sure the function def is done
 		check_token( l.pop(), ")" );
