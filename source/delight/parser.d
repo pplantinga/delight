@@ -961,6 +961,8 @@ class Parser
 
 		string expression = expression_state( token );
 
+		expression ~= clear_tokens( ["\n", "dedent"] );
+
 		string next = l.pop();
 
 		if ( next == "," )
