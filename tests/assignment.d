@@ -11,6 +11,7 @@ void main()
 
 	auto d = 5_432.1e-3;
 	d *= 3.3e4;
+	d ^^= 3;
 
 	auto i = 5;
 	i -= 2;

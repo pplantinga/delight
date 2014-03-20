@@ -581,6 +581,10 @@ class Parser
 	string assignment_state( string token )
 	{
 		check_token_type( token, "assignment operator" );
+
+		// Replace "^=" with "^^="
+		if ( token == "^=" )
+			token = "^^=";
 		
 		return " " ~ token ~ " " ~ expression_state( l.pop() ) ~ ";";
 	}
