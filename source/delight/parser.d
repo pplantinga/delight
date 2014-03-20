@@ -175,7 +175,7 @@ class Parser
 			"library"             : regexify( librarys ),
 			"logical"             : regexify( logical ),
 			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
-			"number literal"      : regex( `^[0-9]+.?[0-9]*$` ),
+			"number literal"      : regex( `^\d[0-9_]*\.?[0-9_]*(e-?[0-9_]+)?$` ),
 			"operator"            : regex( `^([+*%^/~-]|\.\.)$` ),
 			"punctuation"         : regex( `^([.,!:()\[\]#]|#\.|->)$` ),
 			"statement"           : regexify( statements ),
@@ -244,6 +244,7 @@ class Parser
 		assert( p.identify_token( "begin" ) == "newline" );
 		assert( p.identify_token( "5" ) == "number literal" );
 		assert( p.identify_token( "5.2" ) == "number literal" );
+		assert( p.identify_token( "3_333.5e-5" ) == "number literal" );
 		assert( p.identify_token( "-" ) == "operator" );
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( ".." ) == "operator" );

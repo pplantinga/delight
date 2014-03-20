@@ -1,7 +1,7 @@
 void main()
 {
 	string greeting = "Hello";
-	greeting ~= ", world!";
+	greeting ~= `, world!`;
 
 	static immutable THE_CONSTANT = "Never gonna change";
 
@@ -9,10 +9,12 @@ void main()
 	bool the_truth = true;
 	bool not_the_truth = false;
 
-	auto x = 5;
-	x -= 2;
-	x += 4;
-	x *= 6;
-	x %= 7;
-	x /= 3;
+	auto d = 5_432.1e-3;
+	d *= 3.3e4;
+
+	auto i = 5;
+	i -= 2;
+	i += 4_000;
+	i %= 7;
+	i /= 3;
 }

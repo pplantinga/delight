@@ -77,12 +77,18 @@ syn keyword delightType size_t ptrdiff_t sizediff_t equals_t hash_t
 "
 " Strings
 "
-syn region delightString	start=+"+ end=+"[cwd]\=+ skip=+\\\\\|\\"+ contains=dEscSequence,@Spell
+" Escape sequences (oct,specal char,hex,wchar, character entities \&xxx;)
+" These are not contained because they are considered string literals.
+syn match dEscSequence	"\\\(\o\{1,3}\|[\"\\'\\?ntbrfva]\|u\x\{4}\|U\x\{8}\|x\x\x\)"
+syn match dEscSequence	"\\&[^;& \t]\+;"
+
+syn region delightString	start=+"+ end=+"+ skip=+\\\\\|\\"+ contains=dEscSequence,@Spell
+syn region delightString	start=+`+ end=+`+ contains=@Spell
 
 "
 " Chars
 "
-syn match delightCharacter	"'\\.'"
+syn match delightCharacter	"'\\.'" contains=dEscSequence
 syn match delightCharacter	"'[^\\]'"
 
 "
@@ -90,36 +96,12 @@ syn match delightCharacter	"'[^\\]'"
 "
 syn case ignore
 
-syn match delightDec		display "\<\d[0-9_]*\(u\=l\=\|l\=u\=\)\>"
+syn match delightDec		display "\<\d[0-9_]*\>"
 
-" Hex number
-syn match delightHex		display "\<0x[0-9a-f_]\+\(u\=l\=\|l\=u\=\)\>"
-
-syn match delightOctal	display "\<0[0-7_]\+\(u\=l\=\|l\=u\=\)\>"
-" flag an octal number with wrong digits
-syn match delightOctalError	display "\<0[0-7_]*[89][0-9_]*"
-
-" binary numbers
-syn match delightBinary	display "\<0b[01_]\+\(u\=l\=\|l\=u\=\)\>"
-
-"floating point without the dot
-syn match delightFloat	display "\<\d[0-9_]*\(fi\=\|l\=i\)\>"
 "floating point number, with dot, optional exponent
 syn match delightFloat	display "\<\d[0-9_]*\.[0-9_]*\(e[-+]\=[0-9_]\+\)\=[fl]\=i\="
-"floating point number, starting with a dot, optional exponent
-syn match delightFloat	display "\(\.[0-9_]\+\)\(e[-+]\=[0-9_]\+\)\=[fl]\=i\=\>"
 "floating point number, without dot, with exponent
-"syn match delightFloat	display "\<\d\+e[-+]\=\d\+[fl]\=\>"
 syn match delightFloat	display "\<\d[0-9_]*e[-+]\=[0-9_]\+[fl]\=\>"
-
-"floating point without the dot
-syn match delightHexFloat	display "\<0x[0-9a-f_]\+\(fi\=\|l\=i\)\>"
-"floating point number, with dot, optional exponent
-syn match delightHexFloat	display "\<0x[0-9a-f_]\+\.[0-9a-f_]*\(p[-+]\=[0-9_]\+\)\=[fl]\=i\="
-"floating point number, without dot, with exponent
-syn match delightHexFloat	display "\<0x[0-9a-f_]\+p[-+]\=[0-9_]\+[fl]\=i\=\>"
-
-syn cluster delightTokens add=dDec,dHex,dOctal,dOctalError,dBinary,dFloat,dHexFloat
 
 syn case match
 
