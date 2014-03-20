@@ -26,9 +26,7 @@ procedure main():
 
 	int abcd = 3
 
-	int i = 3
-	while i less than 5:
-		i += 1
+	for i in 3 .. 5:
 	
 		abcd += i
 		if i less than 4 and i more than 0:

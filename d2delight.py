@@ -13,7 +13,7 @@ with open( sys.argv[1], 'r' ) as file:
 content = re.sub( r'(import.*);', r'\1', content )
 content = re.sub( r'\b(?!void|new|return)([a-z\[\]]+) ([a-zA-Z0-9_]+\(.*)\)', r'function \2-> \1 ):', content )
 content = re.sub( r'void ([a-zA-Z0-9_]*\(.*\))', r'procedure \1:', content )
-content = re.sub( r'\n([ \t]*)for\s*\(\s*(.*);\s*(.*);\s*(.*[^ ])\s*\)', r'\n\1\2\n\1while \3:\n\1\t\4;', content )
+content = re.sub( r'for\s*\(\s*int\s*([a-z]+)\s*=\s*(.*?);\s*\1\s*<\s*(.*?);\s*\1\+\+\s*\)', r'for \1 in \2 .. \3:', content )
 content = re.sub( r'foreach\s*\(\s*(.*);\s*(.*[^ ])\s*\)', r'for \1 in \2:', content )
 content = re.sub( r'(while|switch)\s*\(\s*(.*[^ ])\s*\)', r'\1 \2:', content )
 content = re.sub( r'class ([A-Za-z_0-9]+)', r'class \1:', content )
