@@ -1,50 +1,36 @@
 #.
-	 Block comment
-	
+	Block comment
+
 import std.stdio
 
 function add( int a, int b -> int ):
-
 	return a + b
 
-
-procedure print( string toprint ):
-
+procedure writeLine( string toprint ):
 	writeln( toprint )
 
-
-class c:
-
+class Da_Class:
 	int a = 5
-	function add( int b -> int ):
-	
+	method add( int b -> int ):
 		a += b
-	
-
+		return a
 
 procedure main():
-
 	int abcd = 3
 
 	for i in 3 .. 5:
-	
 		abcd += i
 		if i less than 4 and i more than 0:
 			abcd = add( i, 2 )
-	
 
 	int[] array = [2,3,4,5,6]
 	for i in array:
-	
 		abcd -= i
-	
 
-	sum = 1
+	auto sum = 1
 	while sum not more than 20:
-	
 		sum += 1
 		switch sum:
-		
 			case 1:
 				sum += 1
 				break
@@ -56,6 +42,3 @@ procedure main():
 				break
 			default:
 				sum = sum * 2
-		
-	
-

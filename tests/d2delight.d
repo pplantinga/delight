@@ -8,17 +8,18 @@ int add( int a, int b )
 	return a + b;
 }
 
-void print( string toprint )
+void writeLine( string toprint )
 {
 	writeln( toprint );
 }
 
-class c
+class Da_Class
 {
 	int a = 5;
 	int add( int b )
 	{
 		a += b;
+		return a;
 	}
 }
 
@@ -39,7 +40,7 @@ void main()
 		abcd -= i;
 	}
 
-	sum = 1;
+	auto sum = 1;
 	while ( sum <= 20 )
 	{
 		sum++;
