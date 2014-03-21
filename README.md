@@ -10,11 +10,16 @@ Installing Delight
 
 If you want to install this program, first make sure you have at least dmd 2.064 installed. Then you can clone this repository, build using dub (or manually compile using all the files in the source directory), and copy the "delight" executable to a directory included in your "PATH" variable.
 
-Execute using
+Using Delight
+-------------
+
+To convert your pre-existing D program to Delight, simply use the d2delight.py python script. It will get you most of the way there, but it's not perfect, so you'll have to clean up a few things yourself. For example, right now it has a little trouble with for-loops that are more complicated than just `i = 0; i < x; i++`, since Pythonic for-loops are quite different.
+
+You can execute the Delight preprocessor using:
 
 	delight {filename}.delight [{filename}.delight]* [-- {compiler} [{options}]]
 
-which will create {filename}.d for each source file in the same directory. If you include the compiler command (dmd, ldc, and gdc are the only valid ones) then this program will compile the code as well. Options are just passed through to the compiler, including any source files already in D.
+which will create {filename}.d for each source file in the same directory. If you include the compiler command (dmd, ldc, or gdc) then this program will compile the code as well. Options are just passed through to the compiler, including any source files already in D.
 
 Delightful Features
 -------------------
@@ -46,13 +51,13 @@ Let's start with some example code, and then we can analyze it.
 			else:
 				print key ~ "'s out!"
 
-In delight, as in python, scope is determined by indentation. You can indent with spaces or tabs, but it must be consistent throughout the file.
+In Delight, as in Python, scope is determined by indentation. You can indent with spaces or tabs, but it must be consistent throughout the file.
 
 Delight is strongly typed, like D, but can do type inference using the D keyword auto. Function definitions start with something like Haskell's type definitions. Templates can be easily created by using a single uppercase letter instead of a type. Leaving off a return type uses the D keyword 'auto' (which deduces type).
 
 Functions are like mathematical functions, they don't have side-effects (thanks to the D keyword "pure") and procedures don't return anything, but all their arguments are passed by reference. Methods are part of a class definition, and thus can make state changes to the class internals.
 
-Like python, delight leans towards using keywords over symbols. Examples: in, less than, and, equal to, etc. The exceptions are operators ( +, -, %, etc. ) and some punctuation ("," "->" ":" etc) One cool feature of this is that every operator with "=" in it is an assignment operator.
+Like Python, Delight leans towards using keywords over symbols. Examples: in, less than, and, equal to, etc. The exceptions are operators ( +, -, %, etc. ) and some punctuation ("," "->" ":" etc) One cool feature of this is that every operator with "=" in it is an assignment operator.
 
 Function definitions, loops, class definitions, conditionals, and pretty much everything that has a scope ends in ":".
 
