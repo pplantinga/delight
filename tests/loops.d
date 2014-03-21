@@ -1,3 +1,4 @@
+import std.range : iota;
 void main()
 {
 	int[] arr = [1, 2, 3];
@@ -14,6 +15,11 @@ void main()
 		{
 			break;
 		}
+	}
+
+	foreach (k; iota(0, 10, 2))
+	{
+		y ^^= k;
 	}
 
 	while (y < 10)

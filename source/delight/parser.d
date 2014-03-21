@@ -85,8 +85,8 @@ class Parser
 
 	/// Contract programming
 	auto contracts = [
-		"in",
-		"out",
+		"enter",
+		"exit",
 		"body"
 	];
 
@@ -115,6 +115,11 @@ class Parser
 	auto logical = [
 		"and",
 		"or"
+	];
+
+	auto ranges = [
+		"in",
+		"to"
 	];
 
 	/// These do things.
@@ -178,6 +183,7 @@ class Parser
 			"number literal"      : regex( `^\d[0-9_]*\.?[0-9_]*(e-?[0-9_]+)?$` ),
 			"operator"            : regex( `^([+*%^/~-]|\.\.)$` ),
 			"punctuation"         : regex( `^([.,!:()\[\]#]|#\.|->)$` ),
+			"range"               : regexify( ranges ),
 			"statement"           : regexify( statements ),
 			"string literal"      : regex( `^".*"$` ),
 			"template type"       : regex( `^[A-Z]$` ),
@@ -187,8 +193,8 @@ class Parser
 
 		// Initialize possible includes
 		include_functions = [
-			"contains" : false,
-			"iota" : false,
+			"in" : false,
+			"to" : false,
 			"print" : false
 		];
 
@@ -227,7 +233,7 @@ class Parser
 		assert( p.identify_token( "'\\n'" ) == "character literal" );
 		assert( p.identify_token( "if" ) == "conditional" );
 		assert( p.identify_token( "else" ) == "conditional" );
-		assert( p.identify_token( "out" ) == "contract" );
+		assert( p.identify_token( "enter" ) == "contract" );
 		assert( p.identify_token( "less than" ) == "comparator" );
 		assert( p.identify_token( "not" ) == "comparator" );
 		assert( p.identify_token( "equal to" ) == "comparator" );
@@ -253,6 +259,7 @@ class Parser
 		assert( p.identify_token( "#" ) == "punctuation" );
 		assert( p.identify_token( "#." ) == "punctuation" );
 		assert( p.identify_token( "->" ) == "punctuation" );
+		assert( p.identify_token( "to" ) == "range" );
 		assert( p.identify_token( "for" ) == "statement" );
 		assert( p.identify_token( `""` ) == "string literal" );
 		assert( p.identify_token( `"string"` ) == "string literal" );
@@ -441,11 +448,20 @@ class Parser
 		if ( token != "body" )
 			context.insertFront( token );
 
-		// parse result token
-		if ( token == "out" && identify_token( l.peek() ) == "identifier" )
-			token ~= " (" ~ l.pop() ~ ")";
+		// parse returned value token
+		string returned;
+		if ( token == "exit" && identify_token( l.peek() ) == "identifier" )
+			returned ~= " (" ~ l.pop() ~ ")";
 
-		return token ~ colon_state( l.pop() );
+		// Convert to D keyword
+		auto convert = [
+			"enter": "in",
+			"exit": "out",
+			"body": "body"
+		];
+		auto keyword = convert[token];
+		
+		return keyword ~ returned ~ colon_state( l.pop() );
 	}
 
 	string statement_state( string token )
@@ -463,8 +479,7 @@ class Parser
 				context.insertFront( "unittest" );
 				return token ~ colon_state( l.pop() );
 			case "print":
-				add_function( "print" );
-				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
+				return add_function( "print", expression_state( l.pop() ) );
 			case "passthrough":
 				return passthrough_state( token );
 
@@ -1105,24 +1120,23 @@ class Parser
 		while ( identify_token( l.peek() ) == "operator"
 				|| identify_token( l.peek() ) == "comparator"
 				|| identify_token( l.peek() ) == "logical"
-				|| l.peek() == "in" )
+				|| identify_token( l.peek() ) == "range" )
 		{
 			// Convert operator into D format
 			string op = l.pop();
-			
-			// "in" means something different in delight
-			if ( op == "in" )
-			{
-				add_function( "contains" );
-				string haystack = expression_state( l.pop() );
-				expression = "contains(" ~ haystack ~ "," ~ expression ~ ")";
-				continue;
-			}
-			
+		
 			// Not combines with the next token
 			if ( op == "not" )
 				op = "not " ~ l.pop();
 
+			// These operators require adding a function that's not in D 
+			if ( op == "not in" || op == "in" || op == "to" )
+			{
+				expression = add_function( op, expression );
+				continue;
+			}
+
+			// Convert operator from Delight to D
 			if ( op in conversion )
 				op = conversion[op];
 
@@ -1443,22 +1457,63 @@ class Parser
 		return "On line " ~ to!string( l.line_number ) ~ ": expected '" ~ expected ~ "' but got '" ~ unexpected ~ "'";
 	}
 
-	/// Add a function that "delight" has but "d" doesn't
-	void add_function( string func )
+	/// Add a function that Delight has but D doesn't
+	string add_function( string func, string expression )
 	{
-		if ( func !in include_functions || include_functions[func] )
-			return;
-
-		include_functions[func] = true;
 		switch ( func )
 		{
-			case "contains":
-				includes ~= "bool contains(H,N)(H h,N n){foreach(i;h)if(i==n)return true;return false;}\n";
-				break;
+			// "in" means "is in range" in Delight
+			case "in":
+			case "not in":
+				if ( !include_functions["in"] )
+				{
+					includes ~= "bool In(H, N)(H h, N n) {\n"
+						~ "	foreach (i; h)\n"
+						~ "		if (i == n) return true;\n"
+						~ "	return false;\n"
+						~ "}\n";
+					include_functions["in"] = true;
+				}
+				
+				string haystack = expression_state( l.pop() );
+				
+				if ( func == "not in" )
+					return "!In(" ~ haystack ~ ", " ~ expression ~ ")";
+
+				return "In(" ~ haystack ~ ", " ~ expression ~ ")";
+			
+			// "to" creates a range in Delight
+			case "to":
+				if ( !include_functions["to"] )
+				{
+					includes ~= "import std.range : iota;\n";
+					include_functions["to"] = true;
+				}
+
+				string to = expression_state( l.pop() );
+				expression = "iota(" ~ expression ~ ", " ~ to;
+
+				// Go up by an increment other than 1
+				if ( l.peek() == "by" )
+				{
+					l.pop();
+					expression ~= ", " ~ expression_state( l.pop() );
+				}
+
+				return expression ~ ")";
+			
+			// Printing is so common, it deserves a keyword
 			case "print":
-				includes ~= "import std.stdio : writeln;\n";
-				break;
+				if ( !include_functions["print"] )
+				{
+					includes ~= "import std.stdio : writeln;\n";
+					include_functions["print"] = true;
+				}
+
+				return "writeln(" ~ expression ~ ");";
+			
 			default:
+				throw new Exception( "Cannot add " ~ func );
 		}
 	}
 }

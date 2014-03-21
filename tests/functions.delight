@@ -11,9 +11,9 @@ function args(
 	return [[2],[3]]
 
 function divide(T a, b):
-in:
+enter:
 	assert b not equal to 0
-out result:
+exit result:
 	assert result more than 0
 body:
 	return a / b

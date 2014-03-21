@@ -1,4 +1,8 @@
-bool contains(H,N)(H h,N n){foreach(i;h)if(i==n)return true;return false;}
+bool In(H, N)(H h, N n) {
+	foreach (i; h)
+		if (i == n) return true;
+	return false;
+}
 import std.stdio : writeln;
 void main()
 {
@@ -35,7 +39,7 @@ void main()
 	}
 
 	int[] a = [1, 2, 5];
-	if (contains(a,2))
+	if (In(a, 2))
 	{
 		writeln("yes");
 	}
