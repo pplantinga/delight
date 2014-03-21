@@ -62,6 +62,7 @@ class Parser
 	auto comparators = [
 		"equal to",
 		"is",
+		"in",
 		"has key",
 		"less than",
 		"more than",
@@ -115,11 +116,6 @@ class Parser
 	auto logical = [
 		"and",
 		"or"
-	];
-
-	auto ranges = [
-		"in",
-		"to"
 	];
 
 	/// These do things.
@@ -183,7 +179,6 @@ class Parser
 			"number literal"      : regex( `^\d[0-9_]*\.?[0-9_]*(e-?[0-9_]+)?$` ),
 			"operator"            : regex( `^([+*%^/~-]|\.\.)$` ),
 			"punctuation"         : regex( `^([.,!:()\[\]#]|#\.|->)$` ),
-			"range"               : regexify( ranges ),
 			"statement"           : regexify( statements ),
 			"string literal"      : regex( `^".*"$` ),
 			"template type"       : regex( `^[A-Z]$` ),
@@ -194,7 +189,7 @@ class Parser
 		// Initialize possible includes
 		include_functions = [
 			"in" : false,
-			"to" : false,
+			"by" : false,
 			"print" : false
 		];
 
@@ -259,7 +254,6 @@ class Parser
 		assert( p.identify_token( "#" ) == "punctuation" );
 		assert( p.identify_token( "#." ) == "punctuation" );
 		assert( p.identify_token( "->" ) == "punctuation" );
-		assert( p.identify_token( "to" ) == "range" );
 		assert( p.identify_token( "for" ) == "statement" );
 		assert( p.identify_token( `""` ) == "string literal" );
 		assert( p.identify_token( `"string"` ) == "string literal" );
@@ -1119,8 +1113,7 @@ class Parser
 
 		while ( identify_token( l.peek() ) == "operator"
 				|| identify_token( l.peek() ) == "comparator"
-				|| identify_token( l.peek() ) == "logical"
-				|| identify_token( l.peek() ) == "range" )
+				|| identify_token( l.peek() ) == "logical" )
 		{
 			// Convert operator into D format
 			string op = l.pop();
@@ -1130,7 +1123,7 @@ class Parser
 				op = "not " ~ l.pop();
 
 			// These operators require adding a function that's not in D 
-			if ( op == "not in" || op == "in" || op == "to" )
+			if ( op == "not in" || op == "in" || op == ".." )
 			{
 				expression = add_function( op, expression );
 				continue;
@@ -1482,25 +1475,32 @@ class Parser
 
 				return "In(" ~ haystack ~ ", " ~ expression ~ ")";
 			
-			// "to" creates a range in Delight
-			case "to":
-				if ( !include_functions["to"] )
-				{
-					includes ~= "import std.range : iota;\n";
-					include_functions["to"] = true;
-				}
-
+			// "x .. y by z" creates a range in Delight
+			case "..":
 				string to = expression_state( l.pop() );
-				expression = "iota(" ~ expression ~ ", " ~ to;
 
 				// Go up by an increment other than 1
 				if ( l.peek() == "by" )
 				{
+					// Remove the "by"
 					l.pop();
-					expression ~= ", " ~ expression_state( l.pop() );
+					
+					if ( !include_functions["by"] )
+					{
+						includes ~= "import std.range : iota;\n";
+						include_functions["by"] = true;
+					}
+
+					string by = expression_state( l.pop() );
+
+					expression = format( "iota(%s, %s, %s)", expression, to, by );
+				}
+				else
+				{
+					expression ~= " .. " ~ to;
 				}
 
-				return expression ~ ")";
+				return expression;
 			
 			// Printing is so common, it deserves a keyword
 			case "print":
