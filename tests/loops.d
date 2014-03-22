@@ -1,4 +1,6 @@
 import std.range : iota;
+import std.algorithm : map;
+import std.algorithm : filter;
 void main()
 {
 	int[] arr = [1, 2, 3];
@@ -20,6 +22,11 @@ void main()
 	foreach (k; iota(0, 10, 2))
 	{
 		y ^^= k;
+	}
+
+	foreach (l; map!(x=>2 * x)(iota(0, 10, 1)).filter!(x=>x ^^ 2 > 3))
+	{
+		y /= l;
 	}
 
 	while (y < 10)

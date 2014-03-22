@@ -178,7 +178,7 @@ class Parser
 			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
 			"number literal"      : regex( `^\d[0-9_]*\.?[0-9_]*(e-?[0-9_]+)?$` ),
 			"operator"            : regex( `^([+*%^/~-]|\.\.)$` ),
-			"punctuation"         : regex( `^([.,!:()\[\]#]|#\.|->)$` ),
+			"punctuation"         : regex( `^([.,!:(){}\[\]#]|#\.|->)$` ),
 			"statement"           : regexify( statements ),
 			"string literal"      : regex( `^".*"$` ),
 			"template type"       : regex( `^[A-Z]$` ),
@@ -190,7 +190,9 @@ class Parser
 		include_functions = [
 			"in" : false,
 			"by" : false,
-			"print" : false
+			"print" : false,
+			"map" : false,
+			"filter" : false
 		];
 
 		// Add a beginning symbol to the context stack
@@ -473,7 +475,8 @@ class Parser
 				context.insertFront( "unittest" );
 				return token ~ colon_state( l.pop() );
 			case "print":
-				return add_function( "print", expression_state( l.pop() ) );
+				add_function( "print" );
+				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
 			case "passthrough":
 				return passthrough_state( token );
 
@@ -1085,6 +1088,9 @@ class Parser
 					case "dedent":
 						expression = expression_state( l.pop() );
 						break;
+					case "{":
+						expression = list_comprehension_state( token );
+						break;
 					default:
 						throw new Exception( unexpected( token ) );
 				}
@@ -1125,8 +1131,40 @@ class Parser
 			// These operators require adding a function that's not in D 
 			if ( op == "not in" || op == "in" || op == ".." )
 			{
-				expression = add_function( op, expression );
-				continue;
+				switch ( op )
+				{
+					case "not in":
+					case "in":
+						add_function( "in" );
+						string haystack = expression_state( l.pop() );
+						expression = "In(" ~ haystack ~ ", " ~ expression ~ ")";
+						if ( op == "not in" )
+							expression = "!" ~ expression;
+						continue;
+
+					case "..":
+						string to = expression_state( l.pop() );
+
+						// Go up by an increment other than 1
+						if ( l.peek() == "by" )
+						{
+							// Remove the "by"
+							l.pop();
+							add_function( "by" );
+
+							string by = expression_state( l.pop() );
+
+							expression = format( "iota(%s, %s, %s)", expression, to, by );
+						}
+						else
+						{
+							expression ~= " .. " ~ to;
+						}
+
+						continue;
+					default:
+						continue;
+				}
 			}
 
 			// Convert operator from Delight to D
@@ -1196,6 +1234,35 @@ class Parser
 		}
 		return expression;
 	}
+
+	string list_comprehension_state( string token )
+	{
+		check_token( token, "{" );
+		string map_fun = expression_state( l.pop() );
+		check_token( l.pop(), "for" );
+		check_token_type( l.peek(), "identifier" );
+		string var = l.pop();
+		check_token( l.pop(), "in" );
+		string range = expression_state( l.pop() );
+		
+		string list_comprehension = "map!(" ~ var ~ "=>" ~ map_fun ~ ")"
+			~ "(" ~ range ~ ")";
+
+		add_function( "map" );
+
+		if ( l.peek() == "where" )
+		{
+			add_function( "filter" );
+			l.pop();
+			string filter_fun = expression_state( l.pop() );
+			list_comprehension ~= ".filter!(" ~ var ~ "=>" ~ filter_fun ~ ")";
+		}
+		
+		check_token( l.pop(), "}" );
+
+		return list_comprehension;
+	}
+
 
 	string instantiation_state( string token )
 	{
@@ -1451,66 +1518,41 @@ class Parser
 	}
 
 	/// Add a function that Delight has but D doesn't
-	string add_function( string func, string expression )
+	void add_function( string func )
 	{
+		assert( func in include_functions );
+
+		if ( include_functions[func] )
+			return;
+
+		include_functions[func] = true;
+		
 		switch ( func )
 		{
 			// "in" means "is in range" in Delight
 			case "in":
-			case "not in":
-				if ( !include_functions["in"] )
-				{
-					includes ~= "bool In(H, N)(H h, N n) {\n"
-						~ "	foreach (i; h)\n"
-						~ "		if (i == n) return true;\n"
-						~ "	return false;\n"
-						~ "}\n";
-					include_functions["in"] = true;
-				}
-				
-				string haystack = expression_state( l.pop() );
-				
-				if ( func == "not in" )
-					return "!In(" ~ haystack ~ ", " ~ expression ~ ")";
+				includes ~= "bool In(H, N)(H h, N n) {\n"
+					~ "	foreach (i; h)\n"
+					~ "		if (i == n) return true;\n"
+					~ "	return false;\n"
+					~ "}\n";
+				break;
 
-				return "In(" ~ haystack ~ ", " ~ expression ~ ")";
-			
 			// "x .. y by z" creates a range in Delight
-			case "..":
-				string to = expression_state( l.pop() );
-
-				// Go up by an increment other than 1
-				if ( l.peek() == "by" )
-				{
-					// Remove the "by"
-					l.pop();
-					
-					if ( !include_functions["by"] )
-					{
-						includes ~= "import std.range : iota;\n";
-						include_functions["by"] = true;
-					}
-
-					string by = expression_state( l.pop() );
-
-					expression = format( "iota(%s, %s, %s)", expression, to, by );
-				}
-				else
-				{
-					expression ~= " .. " ~ to;
-				}
-
-				return expression;
-			
+			case "by":
+				includes ~= "import std.range : iota;\n";
+				break;
+		
 			// Printing is so common, it deserves a keyword
 			case "print":
-				if ( !include_functions["print"] )
-				{
-					includes ~= "import std.stdio : writeln;\n";
-					include_functions["print"] = true;
-				}
+				includes ~= "import std.stdio : writeln;\n";
+				break;
 
-				return "writeln(" ~ expression ~ ");";
+			// For list comprehensions
+			case "map":
+			case "filter":
+				includes ~= "import std.algorithm : " ~ func ~ ";\n";
+				break;
 			
 			default:
 				throw new Exception( "Cannot add " ~ func );
