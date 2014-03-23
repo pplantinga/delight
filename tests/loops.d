@@ -21,10 +21,10 @@ void main()
 
 	foreach (k; iota(0, 10, 2))
 	{
-		y ^^= k;
+		y *= k;
 	}
 
-	foreach (l; map!(x=>2 * x)(iota(0, 10, 1)).filter!(x=>x ^^ 2 > 3))
+	foreach (l; map!(x=>2 * x)(iota(0, 10)).filter!(x=>x ^^ 2 > 3))
 	{
 		y /= l;
 	}

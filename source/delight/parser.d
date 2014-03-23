@@ -189,8 +189,8 @@ class Parser
 		// Initialize possible includes
 		include_functions = [
 			"in" : false,
-			"by" : false,
-			"print" : false,
+			"iota" : false,
+			"writeln" : false,
 			"map" : false,
 			"filter" : false
 		];
@@ -475,7 +475,7 @@ class Parser
 				context.insertFront( "unittest" );
 				return token ~ colon_state( l.pop() );
 			case "print":
-				add_function( "print" );
+				add_function( "writeln" );
 				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
 			case "passthrough":
 				return passthrough_state( token );
@@ -620,7 +620,7 @@ class Parser
 		check_token( l.pop(), "in" );
 
 		// Parse array expression
-		string array = expression_state( l.pop() );
+		string array = expression_state( l.pop(), false );
 
 		return "foreach (" ~ items ~ "; " ~ array ~ ")" ~ colon_state( l.pop() );
 	}
@@ -1010,7 +1010,7 @@ class Parser
 		string access = token;
 		while ( l.peek() != "]" )
 		{
-			access ~= expression_state( l.pop() );
+			access ~= expression_state( l.pop(), false );
 			
 			if ( l.peek() == "," )
 			{
@@ -1043,7 +1043,7 @@ class Parser
 	}
 
 	/// Expression state
-	string expression_state( string token )
+	string expression_state( string token, bool parse_range = true )
 	{
 		string expression;
 
@@ -1137,6 +1137,7 @@ class Parser
 					case "in":
 						add_function( "in" );
 						string haystack = expression_state( l.pop() );
+
 						expression = "In(" ~ haystack ~ ", " ~ expression ~ ")";
 						if ( op == "not in" )
 							expression = "!" ~ expression;
@@ -1145,21 +1146,23 @@ class Parser
 					case "..":
 						string to = expression_state( l.pop() );
 
-						// Go up by an increment other than 1
-						if ( l.peek() == "by" )
-						{
-							// Remove the "by"
-							l.pop();
-							add_function( "by" );
-
-							string by = expression_state( l.pop() );
-
-							expression = format( "iota(%s, %s, %s)", expression, to, by );
-						}
-						else
+						// Don't use iota when !parse_range
+						if ( !parse_range && l.peek() != "by" )
 						{
 							expression ~= " .. " ~ to;
+							continue;
 						}
+
+						add_function( "iota" );
+						expression = format( "iota(%s, %s", expression, to );
+
+						if ( l.peek() == "by" )
+						{
+							l.pop();
+							expression ~= ", " ~ expression_state( l.pop() );
+						}
+
+						expression ~= ")";
 
 						continue;
 					default:
@@ -1237,19 +1240,29 @@ class Parser
 
 	string list_comprehension_state( string token )
 	{
+		// Since we use indents for scope, brackets are fine for list comprehensions
 		check_token( token, "{" );
+
+		// Mapping function
 		string map_fun = expression_state( l.pop() );
+
+		// variable
 		check_token( l.pop(), "for" );
 		check_token_type( l.peek(), "identifier" );
 		string var = l.pop();
+		
+		// range expression
 		check_token( l.pop(), "in" );
 		string range = expression_state( l.pop() );
 		
+		// Put it all together and what have you got?
+		// Bippity boppity boo
 		string list_comprehension = "map!(" ~ var ~ "=>" ~ map_fun ~ ")"
 			~ "(" ~ range ~ ")";
 
 		add_function( "map" );
 
+		// Add filter clause
 		if ( l.peek() == "where" )
 		{
 			add_function( "filter" );
@@ -1538,13 +1551,13 @@ class Parser
 					~ "}\n";
 				break;
 
-			// "x .. y by z" creates a range in Delight
-			case "by":
+			// "x .. y" can create a range in Delight
+			case "iota":
 				includes ~= "import std.range : iota;\n";
 				break;
 		
 			// Printing is so common, it deserves a keyword
-			case "print":
+			case "writeln":
 				includes ~= "import std.stdio : writeln;\n";
 				break;
 
