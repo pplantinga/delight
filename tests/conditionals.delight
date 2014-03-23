@@ -23,6 +23,9 @@ procedure main:
 	if 2 in a:
 		print "yes"
 
+	if 2 in 1 .. 5:
+		print "yes"
+
 	int[string] b = ["a": 1, "b": 2]
 	if b has key "a":
 		print "yes"

@@ -4,6 +4,7 @@ bool In(H, N)(H h, N n) {
 	return false;
 }
 import std.stdio : writeln;
+import std.range : iota;
 void main()
 {
 	int x = 1;
@@ -40,6 +41,11 @@ void main()
 
 	int[] a = [1, 2, 5];
 	if (In(a, 2))
+	{
+		writeln("yes");
+	}
+
+	if (In(iota(1, 5), 2))
 	{
 		writeln("yes");
 	}
