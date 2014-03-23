@@ -124,6 +124,7 @@ class Parser
 		"break",
 		"continue",
 		"for",
+		"new",
 		"passthrough",
 		"print",
 		"raise",
@@ -1045,56 +1046,8 @@ class Parser
 	/// Expression state
 	string expression_state( string token, bool parse_range = true )
 	{
-		string expression;
-
-		if ( token == "new" )
-			return instantiation_state( token );
-
-		switch ( identify_token( token ) )
-		{
-			case "string literal":
-			case "character literal":
-			case "number literal":
-				expression = token;
-				break;
-			case "identifier":
-			case "constant":
-			case "constructor":
-				expression = identifier_state( token );
-				break;
-			default:
-				switch( token )
-				{
-					case "not":
-						expression = "!" ~ expression_state( l.pop() );
-						break;
-					case "[":
-						expression = array_literal_state( token );
-						break;
-					case "-":
-					case "(":
-						expression = token ~ expression_state( l.pop() );
-						break;
-					case "#":
-					case "#.":
-						expression = block_state( token );
-						expression ~= expression_state( l.pop() );
-						break;
-					case "\n":
-						string newline = newline_state( token );
-						expression = newline ~ expression_state( l.pop() );
-						break;
-					case "indent":
-					case "dedent":
-						expression = expression_state( l.pop() );
-						break;
-					case "{":
-						expression = list_comprehension_state( token );
-						break;
-					default:
-						throw new Exception( unexpected( token ) );
-				}
-		}
+		// Parse the first operand
+		string expression = parse_operand( token );
 
 		// While there's unbalanced parentheses
 		// parse newlines, comments, and end parentheses
@@ -1131,43 +1084,8 @@ class Parser
 			// These operators require adding a function that's not in D 
 			if ( op == "not in" || op == "in" || op == ".." )
 			{
-				switch ( op )
-				{
-					case "not in":
-					case "in":
-						add_function( "in" );
-						string haystack = expression_state( l.pop() );
-
-						expression = "In(" ~ haystack ~ ", " ~ expression ~ ")";
-						if ( op == "not in" )
-							expression = "!" ~ expression;
-						continue;
-
-					case "..":
-						string to = expression_state( l.pop() );
-
-						// Don't use iota when !parse_range
-						if ( !parse_range && l.peek() != "by" )
-						{
-							expression ~= " .. " ~ to;
-							continue;
-						}
-
-						add_function( "iota" );
-						expression = format( "iota(%s, %s", expression, to );
-
-						if ( l.peek() == "by" )
-						{
-							l.pop();
-							expression ~= ", " ~ expression_state( l.pop() );
-						}
-
-						expression ~= ")";
-
-						continue;
-					default:
-						continue;
-				}
+				expression = add_function_op( op, expression, parse_range );
+				continue;
 			}
 
 			// Convert operator from Delight to D
@@ -1177,18 +1095,60 @@ class Parser
 			// Here we're after the conversion, so we're talking about D's "in"
 			if ( op == "in" || op == "!in" )
 			{
-				string key = expression_state( l.pop() );
+				string key = parse_operand( l.pop() );
 				expression = key ~ " " ~ op ~ " " ~ expression;
 				continue;
 			}
 
-			expression ~= " " ~ op ~ " " ~ expression_state( l.pop() );
+			expression ~= " " ~ op ~ " " ~ parse_operand( l.pop() );
 
 			if ( !balancedParens( expression, '(', ')' ) )
 				balance_parens( expression );
 		}
 
 		return expression;
+	}
+
+	string parse_operand( string token )
+	{
+		switch ( identify_token( token ) )
+		{
+			case "string literal":
+			case "character literal":
+			case "number literal":
+				return token;
+			case "identifier":
+			case "constant":
+			case "constructor":
+				return identifier_state( token );
+			default:
+				switch( token )
+				{
+					case "new":
+						return instantiation_state( token );
+					case "not":
+						return "!" ~ parse_operand( l.pop() );
+					case "[":
+						return array_literal_state( token );
+					case "-":
+					case "(":
+						return token ~ parse_operand( l.pop() );
+					case "#":
+					case "#.":
+						string block = block_state( token );
+						return block ~ parse_operand( l.pop() );
+					case "\n":
+						string newline = newline_state( token );
+						return newline ~ parse_operand( l.pop() );
+					case "indent":
+					case "dedent":
+						return parse_operand( l.pop() );
+					case "{":
+						return list_comprehension_state( token );
+					default:
+						throw new Exception( unexpected( token ) );
+				}
+		}
 	}
 
 	void balance_parens( ref string expression )
@@ -1235,6 +1195,40 @@ class Parser
 					break;
 			}
 		}
+		return expression;
+	}
+
+	string add_function_op( string operator, string expression, bool parse_range )
+	{
+		if ( operator == "in" || operator == "not in" )
+		{
+			add_function( "in" );
+			string haystack = expression_state( l.pop() );
+
+			expression = "In(" ~ haystack ~ ", " ~ expression ~ ")";
+			if ( operator == "not in" )
+				expression = "!" ~ expression;
+		}
+		else if ( operator == ".." )
+		{
+			string to = expression_state( l.pop() );
+
+			// Don't use iota when !parse_range
+			if ( !parse_range && l.peek() != "by" )
+				return expression ~ " .. " ~ to;
+
+			add_function( "iota" );
+
+			if ( l.peek() == "by" )
+			{
+				l.pop();
+				string by = expression_state( l.pop() );
+				return format( "iota(%s, %s, %s)", expression, to, by );
+			}
+
+			expression = format( "iota(%s, %s)", expression, to );
+		}
+
 		return expression;
 	}
 
