@@ -1467,6 +1467,12 @@ class Parser
 
 	string exception_state( string token )
 	{
+		// Ensure proper context
+		if ( ( token == "except" || token == "finally" )
+				&& previous_context != "try"
+				&& previous_context != "except" )
+			throw new Exception( unexpected( token ) );
+
 		// Keep track of context
 		context.insertFront( token );
 
@@ -1474,24 +1480,18 @@ class Parser
 		string exception_type;
 		if ( token == "except" )
 		{
-			exception_type = l.pop();
-			exception_type ~= " " ~ l.pop();
+			token = "catch";
+
+			if ( l.peek() != ":" )
+			{
+				check_token_type( l.peek(), "class identifier" );
+				exception_type = " (" ~ l.pop();
+				check_token_type( l.peek(), "identifier" );
+				exception_type ~= " " ~ l.pop() ~ ")";
+			}
 		}
 
-		// Check for proper context
-		bool try_or_except =
-			previous_context == "try" || previous_context == "except";
-
-		string exception;
-		if ( token == "try"
-				|| token == "finally" && try_or_except )
-			exception = token;
-		else if ( token == "except" && try_or_except )
-			exception = "catch (" ~ exception_type ~ ")";
-		else
-			throw new Exception( unexpected( token ) );
-
-		return exception ~ colon_state( l.pop() );
+		return token ~ exception_type ~ colon_state( l.pop() );
 	}
 
 	/// New line, plus indentation
