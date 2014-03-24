@@ -21,8 +21,8 @@ endfunction
 
 syn keyword delightDebug         unittest assert deprecated
 syn keyword delightScopeDecl     public protected private export package
+syn keyword delightScopeIdent    enter exit body success failure
 syn keyword delightStatement     break continue return print passthrough new
-syn keyword delightStatement     enter exit body
 syn keyword delightStorageClass  auto static override abstract ref scope
 syn keyword delightStorageClass  synchronized immutable lazy
 syn keyword delightStructure     class enum this super
@@ -117,6 +117,7 @@ syn keyword delightConstant NULL
 
 hi def link delightDebug            Statement
 hi def link delightScopeDecl        StorageClass
+hi def link delightScopeIdent       Identifier
 hi def link delightStorageClass     StorageClass
 hi def link delightStatement        Statement
 hi def link delightStructure        Structure

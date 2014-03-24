@@ -25,8 +25,11 @@ body
 
 void divideAdd(ref int a, ref int b)
 {
+	scope (exit)
+	{
+		b = add(a, b);
+	}
 	a = divide(a, b);
-	b = add(a, b);
 }
 
 void main()

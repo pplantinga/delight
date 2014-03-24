@@ -129,6 +129,7 @@ class Parser
 		"print",
 		"raise",
 		"return",
+		"scope",
 		"unittest",
 		"while"
 	];
@@ -480,6 +481,8 @@ class Parser
 				return "writeln(" ~ expression_state( l.pop() ) ~ ");";
 			case "passthrough":
 				return passthrough_state( token );
+			case "scope":
+				return scope_state( token );
 
 			// The following cases end with "break" to continue execution
 			case "break":
@@ -677,6 +680,20 @@ class Parser
 		check_token( l.pop(), ":" );
 
 		return block_state( token );
+	}
+	
+	/// Scope guard statements
+	string scope_state( string token )
+	{
+		// Enter context
+		check_token( token, "scope" );
+		context.insertFront( "scope" );
+
+		// Only valid guards are exit, success, and failure
+		check_token( l.peek(), "exit", "success", "failure" );
+		string scope_guard = "scope (" ~ l.pop() ~ ")";
+
+		return scope_guard ~ colon_state( l.pop() );
 	}
 
 	/// Control branching

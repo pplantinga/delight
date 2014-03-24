@@ -19,8 +19,9 @@ body:
 	return a / b
 
 procedure divideAdd(int a, b):
+	scope exit:
+		b = add(a, b)
 	a = divide(a, b)
-	b = add(a, b)
 
 procedure main:
 	int c = add(2, 1)
