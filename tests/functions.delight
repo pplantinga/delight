@@ -2,8 +2,8 @@ function add(int a, b -> int):
 	return a + b
 
 function args(
-	int a, b, c, d, e
-	double f, g
+	int a, b, c, d, e,
+	double f, g,
 	int[] so_many_args
 	->
 	int[,]
