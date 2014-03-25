@@ -10,26 +10,21 @@ pure int[][] args(int a, int b, int c, int d, int e, double f, double g, int[] s
 }
 
 pure auto divide(T)(T a, T b)
-in
 {
 	assert(b != 0);
-}
-out (result)
-{
-	assert(result > 0);
-}
-body
-{
+
+	scope (exit)
+	{
+		assert(a / b > 0);
+	}
+
 	return a / b;
 }
 
 void divideAdd(ref int a, ref int b)
 {
-	scope (exit)
-	{
-		b = add(a, b);
-	}
 	a = divide(a, b);
+	b = add(a, b);
 }
 
 void main()

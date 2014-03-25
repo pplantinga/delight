@@ -11,17 +11,16 @@ function args(
 	return [[2],[3]]
 
 function divide(T a, b):
-enter:
 	assert b not equal to 0
-exit result:
-	assert result more than 0
-body:
+	
+	scope exit:
+		assert a / b more than 0
+
 	return a / b
 
 procedure divideAdd(int a, b):
-	scope exit:
-		b = add(a, b)
 	a = divide(a, b)
+	b = add(a, b)
 
 procedure main:
 	int c = add(2, 1)

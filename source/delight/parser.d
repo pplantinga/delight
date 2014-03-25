@@ -84,13 +84,6 @@ class Parser
 		"this"
 	];
 
-	/// Contract programming
-	auto contracts = [
-		"enter",
-		"exit",
-		"body"
-	];
-
 	/// Exception handling
 	auto exceptions = [
 		"try",
@@ -172,7 +165,6 @@ class Parser
 			"conditional"         : regexify( conditionals ),
 			"constant"            : regex( `^[A-Z_]{2,}$` ),
 			"constructor"         : regexify( constructors ),
-			"contract"            : regexify( contracts ),
 			"exception"           : regexify( exceptions ),
 			"function type"       : regexify( function_types ),
 			"library"             : regexify( librarys ),
@@ -232,7 +224,6 @@ class Parser
 		assert( p.identify_token( "'\\n'" ) == "character literal" );
 		assert( p.identify_token( "if" ) == "conditional" );
 		assert( p.identify_token( "else" ) == "conditional" );
-		assert( p.identify_token( "enter" ) == "contract" );
 		assert( p.identify_token( "less than" ) == "comparator" );
 		assert( p.identify_token( "not" ) == "comparator" );
 		assert( p.identify_token( "equal to" ) == "comparator" );
@@ -356,8 +347,6 @@ class Parser
 				return constructor_state( token );
 			case "constant":
 				return "static immutable " ~ token ~ assignment_state( l.pop() );
-			case "contract":
-				return contract_state( token );
 			case "type":
 			case "class identifier":
 				return declare_state( token );
@@ -436,30 +425,6 @@ class Parser
 		}
 		
 		return token ~ "(" ~ args ~ ")" ~ endline;
-	}
-
-	string contract_state( string token )
-	{
-		check_token_type( context.front, "function type" );
-
-		// Enter context, body context is taken care of by function dec
-		if ( token != "body" )
-			context.insertFront( token );
-
-		// parse returned value token
-		string returned;
-		if ( token == "exit" && identify_token( l.peek() ) == "identifier" )
-			returned ~= " (" ~ l.pop() ~ ")";
-
-		// Convert to D keyword
-		auto convert = [
-			"enter": "in",
-			"exit": "out",
-			"body": "body"
-		];
-		auto keyword = convert[token];
-		
-		return keyword ~ returned ~ colon_state( l.pop() );
 	}
 
 	string statement_state( string token )
@@ -821,16 +786,7 @@ class Parser
 		if ( token == "function" )
 			return_type = "pure " ~ return_type;
 		
-		// Must end with a colon-newline-indent
-		check_token( l.pop(), ":" );
-		check_token( l.pop(), "\n" );
-		string newline = endline();
-
-		// Check for contracts
-		if ( identify_token( l.peek() ) == "contract" )
-			newline ~= contract_state( l.pop() );
-
-		return return_type ~ name ~ "(" ~ args ~ ")" ~ newline;
+		return return_type ~ name ~ "(" ~ args ~ ")" ~ colon_state( l.pop() );
 	}
 
 
