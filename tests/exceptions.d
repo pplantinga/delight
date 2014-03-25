@@ -20,6 +20,6 @@ void main()
 	finally
 	{
 		a += b + 3;
-		writeln( a );
+		writeln(a);
 	}
 }

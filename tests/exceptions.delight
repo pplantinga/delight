@@ -2,12 +2,13 @@ procedure main:
 	int a
 	int b
 	try:
-		a = b + 1
+		a += b + 1
 		raise "This is an exception"
 	except Exception e:
-		a = b + 2
+		a += b + 2
 		raise new Exception( "Weird" )
 	except:
-		a = b + 4
+		a += b + 4
 	finally:
-		a = b + 3
+		a += b + 3
+		print a
