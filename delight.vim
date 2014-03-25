@@ -19,7 +19,7 @@ endfunction
 " Keywords
 "
 
-syn keyword delightDebug         unittest assert deprecated
+syn keyword delightDebug         unittest assert deprecated debug
 syn keyword delightScopeDecl     public protected private export package
 syn keyword delightScopeIdent    enter exit body success failure
 syn keyword delightStatement     break continue return print passthrough new

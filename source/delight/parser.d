@@ -116,6 +116,7 @@ class Parser
 		"assert",
 		"break",
 		"continue",
+		"debug",
 		"for",
 		"new",
 		"passthrough",
@@ -439,7 +440,8 @@ class Parser
 			case "assert":
 				return token ~ "(" ~ expression_state( l.pop() ) ~ ");";
 			case "unittest":
-				context.insertFront( "unittest" );
+			case "debug":
+				context.insertFront( token );
 				return token ~ colon_state( l.pop() );
 			case "print":
 				add_function( "writeln" );

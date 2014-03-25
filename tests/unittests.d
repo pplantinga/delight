@@ -1,3 +1,4 @@
+import std.stdio : writeln;
 pure auto add(int a, int b)
 {
 	return a + b;
@@ -12,4 +13,8 @@ unittest
 void main()
 {
 	int c = add(3, 4);
+	debug
+	{
+		writeln(c);
+	}
 }

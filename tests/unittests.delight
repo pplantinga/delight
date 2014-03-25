@@ -7,3 +7,5 @@ unittest:
 
 procedure main:
 	int c = add( 3, 4 )
+	debug:
+		print c
