@@ -142,7 +142,8 @@ class Parser
 	/// More complicated types.
 	auto user_types = [
 		"class",
-		"enum"
+		"enum",
+		"struct"
 	];
 
 	/**
@@ -377,10 +378,10 @@ class Parser
 			case "newline":
 				return newline_state( token );
 			case "user type":
-				if ( token == "class" )
-					return token ~ " " ~ class_state( l.pop() );
-				else
-					throw new Exception( unexpected( token ) );
+				if ( token == "class" || token == "struct" )
+					return user_type_state( token );
+				else // token == "enum"
+					return enum_state( token );
 			case "exception":
 				return exception_state( token );
 			default:
@@ -1354,28 +1355,65 @@ class Parser
 	}
 
 	/// Object Orientation!
-	string class_state( string token )
+	string user_type_state( string token )
 	{
-		context.insertFront( "class" );
-		check_token_type( token, "class identifier" );
+		check_token( token, "class", "struct" );
 
-		string class_identifier = token;
+		context.insertFront( token );
+		check_token_type( l.peek(), "class identifier" );
+
+		string class_identifier = l.pop();
 
 		// Check if this class is actually a template
-		if ( l.peek() == "(" )
+		if ( l.peek() == "(" && token == "class" )
 		{
+			// Change context to template, not class
 			context.removeFront();
 			context.insertFront( "template" );
+
 			class_identifier ~= parse_template_types( l.pop() );
 		}
-		else if ( l.peek() == "<-" )
+		
+		// Check if this is a child class
+		if ( l.peek() == "<-" && token == "class" )
 		{
 			l.pop();
 			check_token_type( l.peek(), "class identifier" );
 			class_identifier ~= " : " ~ l.pop();
 		}
 			
-		return class_identifier ~ colon_state( l.pop() );
+		return token ~ " " ~ class_identifier ~ colon_state( l.pop() );
+	}
+
+	// Add an enumerable type
+	string enum_state( string token )
+	{
+		check_token( token, "enum" );
+
+		// The name of the enum
+		check_token_type( l.peek(), "class identifier" );
+		string identifier = l.pop();
+
+		check_token( l.pop(), "{" );
+
+		string elements = clear_tokens( ["\n", "indent", "#", "#."] );
+		
+		check_token_type( l.peek(), "class identifier" );
+		elements ~= l.pop();
+
+		// Parse all the parts of the enum
+		while ( l.peek() == "," )
+		{
+			elements ~= l.pop() ~ " ";
+			elements ~= clear_tokens( ["\n", "#", "#."] );
+			check_token_type( l.peek(), "class identifier" );
+			elements ~= l.pop();
+		}
+
+		elements ~= clear_tokens( ["\n", "dedent", "#", "#."] );
+		check_token( l.pop(), "}" );
+
+		return "enum " ~ identifier ~ " { " ~ elements ~ " }";
 	}
 
 	string parse_template_types( string token )

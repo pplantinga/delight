@@ -1,3 +1,23 @@
+enum Card { 
+// First
+	Club, 
+
+	// Second
+	Diamond, 
+
+	// Third
+	Heart, 
+
+	// Last
+	Spade
+ }
+
+struct Stuff
+{
+	int variable;
+	string a_string;
+}
+
 class Test
 {
 	int myvar;

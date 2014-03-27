@@ -25,7 +25,7 @@ syn keyword delightScopeIdent    enter exit body success failure
 syn keyword delightStatement     break continue return print passthrough new
 syn keyword delightStorageClass  auto static override abstract ref scope
 syn keyword delightStorageClass  synchronized immutable lazy
-syn keyword delightStructure     class enum this super
+syn keyword delightStructure     class enum struct this super
 syn keyword delightFunction      function method procedure
 syn keyword delightRepeat        for while
 syn keyword delightConditional   if else switch case default where
