@@ -24,7 +24,7 @@ void main()
 		y -= k;
 	}
 
-	foreach (l; map!(x=>2 * x)(iota(0, 10)).filter!(x=>x ^^ 2 > 3))
+	foreach (l; filter!(x => x ^^ 2 > 3)(iota(0, 10)).map!(x=>2 * x))
 	{
 		y /= l;
 	}

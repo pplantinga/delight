@@ -1223,7 +1223,8 @@ class Parser
 		check_token( token, "{" );
 
 		// Mapping function
-		string map_fun = expression_state( l.pop() );
+		add_function( "map" );
+		string map_function = expression_state( l.pop() );
 
 		// variable
 		check_token( l.pop(), "for" );
@@ -1234,25 +1235,29 @@ class Parser
 		check_token( l.pop(), "in" );
 		string range = expression_state( l.pop() );
 		
-		// Put it all together and what have you got?
-		// Bippity boppity boo
-		string list_comprehension = "map!(" ~ var ~ "=>" ~ map_fun ~ ")"
-			~ "(" ~ range ~ ")";
+		// Full map expression
+		string map = "map!(" ~ var ~ "=>" ~ map_function ~ ")";
 
-		add_function( "map" );
-
-		// Add filter clause
+		// Prepend filter clause
 		if ( l.peek() == "where" )
 		{
-			add_function( "filter" );
+			// Remove "where"
 			l.pop();
-			string filter_fun = expression_state( l.pop() );
-			list_comprehension ~= ".filter!(" ~ var ~ "=>" ~ filter_fun ~ ")";
+
+			add_function( "filter" );
+			string filter_function = expression_state( l.pop() );
+			string filter = "filter!(" ~ var ~ " => " ~ filter_function ~ ")";
+
+			check_token( l.pop(), "}" );
+		
+			// Put it all together and what have you got?
+			// Bippity boppity boo
+			return filter ~ "(" ~ range ~ ")." ~ map;
 		}
 		
 		check_token( l.pop(), "}" );
 
-		return list_comprehension;
+		return map ~ "(" ~ range ~ ")";
 	}
 
 
