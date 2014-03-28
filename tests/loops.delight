@@ -1,21 +1,22 @@
 procedure main:
 	int[] arr = [1, 2, 3]
 	int y = 0
+	
 	for i, x in arr:
 		y += x
 
 	for j in 0 .. 5:
-		y -= j
-		if y less than 0:
+		y *= j
+		if y more than 0:
 			break
 
 	for k in 0 .. 10 by 2:
-		y *= k
+		y -= k
 	
 	for l in { 2 * x for x in 0 .. 10 where x ^ 2 more than 3 }:
 		y /= l
 
-	while y less than 10:
-		y *= 2
+	while y not less than -10:
+		y %= 2
 
-		y -= 2
+		y -= 100
