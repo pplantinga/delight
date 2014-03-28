@@ -8,7 +8,7 @@ There is an opportunity to discuss language features at [pplantinga.github.io](h
 Installing Delight
 ------------------
 
-If you want to install this program, first make sure you have at least dmd 2.064 installed. Then you can clone this repository, build using dub (or manually compile using all the files in the source directory), and copy the "delight" executable to a directory included in your "PATH" variable.
+If you want to install this program, first make sure you have at least dmd 2.065 installed. Then you can clone this repository, build using dub (or manually compile using all the files in the source directory), and copy the "delight" executable to a directory included in your "PATH" variable.
 
 Using Delight
 -------------
