@@ -4,13 +4,12 @@ import std.algorithm : filter;
 void main()
 {
 	int[] arr = [1, 2, 3];
-	int y = 0;
-
-	foreach (i, x; arr)
+	foreach (i, ref x; arr)
 	{
-		y += x;
+		x += 2;
 	}
 
+	int y = 2;
 	foreach (j; 0 .. 5)
 	{
 		y *= j;

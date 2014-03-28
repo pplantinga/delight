@@ -1,10 +1,9 @@
 procedure main:
 	int[] arr = [1, 2, 3]
-	int y = 0
-	
-	for i, x in arr:
-		y += x
+	for i, ref x in arr:
+		x += 2
 
+	int y = 2
 	for j in 0 .. 5:
 		y *= j
 		if y more than 0:

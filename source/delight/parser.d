@@ -578,13 +578,22 @@ class Parser
 	{
 		check_token( token, "for" );
 		context.insertFront( "for" );
-		check_token_type( l.peek(), "identifier" );
+		
+		string items;
+		while ( identify_token( l.peek() ) == "attribute" )
+			items ~= l.pop() ~ " ";
 
-		string items = l.pop();
+		check_token_type( l.peek(), "identifier" );
+		items ~= l.pop();
+
 		// If we're keeping track of the index
 		if ( l.peek() == "," )
 		{
 			items ~= l.pop() ~ " ";
+
+			while ( identify_token( l.peek() ) == "attribute" )
+				items ~= l.pop ~ " ";
+
 			check_token_type( l.peek(), "identifier" );
 			items ~= l.pop();
 		}
