@@ -3,23 +3,25 @@ Delight
 
 Delight is a D programming language preprocessor. The resulting language, called "Delight" has a Python-like syntax, with a touch of Haskell and Ada. The philosophy is like Python's, that there should be one obvious way to do things.
 
+The idea behind Delight is similar to the idea behind the D programming language. A language can have both the nice features of dynamic languages and the speed of a compiled language. Delight takes out some of the redundant features of D and adds a few others using Phobos, D's standard library.
+
 There is an opportunity to discuss language features at [pplantinga.github.io](http://pplantinga.github.io).
 
 Installing Delight
 ------------------
 
-If you want to install this program, first make sure you have at least dmd 2.065 installed. Then you can clone this repository, build using dub (or manually compile using all the files in the source directory), and copy the "delight" executable to a directory included in your "PATH" variable.
+If you want to install this program, first make sure you have at least dmd 2.065 installed. Then you can clone this repository, build using dub (or manually compile using all the files in the source/delight directory), and copy the "delight" executable to a directory included in your "PATH" variable.
 
 Using Delight
 -------------
 
-To convert your pre-existing D program to Delight, simply use the d2delight.py python script. It will get you most of the way there, but it's not perfect, so you'll have to clean up a few things yourself. For example, right now it has a little trouble with for-loops that are more complicated than just `i = 0; i < x; i++`, since Pythonic for-loops are quite different.
+To convert your pre-existing D program to Delight, simply use the d2delight.py python script. It will get you most of the way there, but it's not perfect, so you'll have to clean up a few things yourself. For example, right now it has a little trouble with for loops that are more complicated than just `i = 0; i < x; i++`, since Pythonic for loops more like foreach loops than for loops.
 
 You can execute the Delight preprocessor using:
 
 	delight {filename}.delight [{filename}.delight]* [-- {compiler} [{options}]]
 
-which will create {filename}.d for each source file in the same directory. If you include the compiler command (dmd, ldc, or gdc) then this program will compile the code as well. Options are just passed through to the compiler, including any source files already in D.
+which will create {filename}.d for each source file in the same directory. If you include the compiler command (dmd, ldc, or gdc) then this program will compile the code as well. Options are just passed through to the compiler, including any source files already in D. Make sure that your compiler has access to the standard library, since Delight creates D code that depends on it.
 
 Delightful Features
 -------------------
@@ -50,6 +52,9 @@ Let's start with some example code, and then we can analyze it.
 
 			else:
 				print key ~ "'s out!"
+				
+		print { i * 2 for i in 0 .. 5 where i ^ 2 less than 5 }
+		# prints [0, 2, 4]
 
 In Delight, as in Python, scope is determined by indentation. You can indent with spaces or tabs, but it must be consistent throughout the file.
 
@@ -62,6 +67,8 @@ Like Python, Delight leans towards using keywords over symbols. Examples: in, le
 Function definitions, loops, class definitions, conditionals, and pretty much everything that has a scope ends in ":".
 
 Comments start with "#" and if they have a "." they are documentation comments. They are whitespace-delimited, which avoids problems of nesting a little more cleanly than D's 6 different types of comments, and Python's multi-line strings as the only multi-line comments.
+
+Probably the coolest feature in Delight is list comprehensions. Delight uses functions in std.algorithm to generate an iterable range. The syntax is similar to Python's. See the last two lines of the code above for an example.
 
 The language as it stands here is subject to expansion and change, it's still in it's infancy.
 
