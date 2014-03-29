@@ -838,6 +838,14 @@ class Parser
 			while ( identify_token( l.peek() ) == "identifier" )
 			{
 				args ~= type ~ " " ~ l.pop();
+				
+				// Default
+				if ( l.peek() == "=" )
+				{
+					args ~= " " ~ l.pop() ~ " ";
+					args ~= expression_state( l.pop() );
+				}
+
 				if ( l.peek() == "," )
 					args ~= l.pop() ~ " ";
 			}
