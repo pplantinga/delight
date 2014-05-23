@@ -17,6 +17,7 @@ import std.array : join;
 import std.math : abs;
 import std.algorithm : startsWith;
 import std.string : strip, format;
+import std.conv : to;
 
 class Lexer
 {
@@ -178,7 +179,7 @@ class Lexer
 		current_line = replaceFirst( current_line, whitespace_regex, `` );
 		int level;
 		if ( indentation )
-			level = whitespace.length / indentation.length;
+			level = to!int( whitespace.length / indentation.length );
 		
 		// Check that whitespace is legal
 		string whitespace_error = "Whitespace error on line %s";
