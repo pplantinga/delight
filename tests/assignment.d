@@ -1,3 +1,9 @@
+pure auto template(T)(T var)
+{
+	T x = var + 5;
+	return x;
+}
+
 void main()
 {
 	string greeting = "Hello";
@@ -14,7 +20,7 @@ void main()
 	d ^^= 3;
 
 	auto i = 5;
-	i -= 2;
+	i -= template(2);
 	i += 4_000;
 	i %= 7;
 	i /= 3;

@@ -855,7 +855,11 @@ class Parser
 
 		// Add template types (minus the ending comma)
 		if ( template_types )
+		{
 			template_types = chomp( template_types, ", " ) ~ ")(";
+			context.removeFront();
+			context.insertFront( "template" );
+		}
 
 		return template_types ~ args;
 	}
