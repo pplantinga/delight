@@ -53,7 +53,6 @@ class Parser
 		"protected",
 		"public",
 		"ref",
-		"scope",
 		"static",
 		"synchronized"
 	];
