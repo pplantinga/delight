@@ -76,4 +76,4 @@ Read more at [pplantinga.github.io/archives/delight-programming-language.html](h
 
 License
 -------
-Delight is licensed under GNU GPL.
+Delight is licensed under Boost, the same license that D is licensed under.
