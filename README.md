@@ -73,3 +73,7 @@ Probably the coolest feature in Delight is list comprehensions. Delight uses fun
 The language as it stands here is subject to expansion and change, it's still in it's infancy.
 
 Read more at [pplantinga.github.io/archives/delight-programming-language.html](http://pplantinga.github.io/archives/delight-programming-language.html)
+
+License
+-------
+Delight is licensed under GNU GPL.
