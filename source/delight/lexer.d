@@ -259,7 +259,7 @@ class Lexer
 			else if ( hit[0] == ";" )
 				throw new Exception( format( "Illegal ';' line %s", line_number ) );
 			else
-				tokens.insertBack( hit );
+				tokens.insertBack( hit[0] );
 		}
 	}
 

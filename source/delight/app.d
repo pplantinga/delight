@@ -22,7 +22,7 @@ import std.algorithm;
 import std.process;
 import std.array;
 
-void main( string args[] )
+void main( string[] args )
 {
 	// Check for appropriate arguments
 	if ( args.length < 2 || !endsWith( args[1], ".delight" ) )
