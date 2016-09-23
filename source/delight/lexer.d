@@ -104,7 +104,7 @@ class Lexer
 		assert( l1.pop() == "\n" );
 		assert( l1.pop() == "\n" );
 		assert( l1.pop() == "int" );
-		assert( l1.pop() == "d" );
+		assert( l1.pop() == "d1" );
 		assert( l1.pop() == "=" );
 		assert( l1.pop() == "add" );
 		assert( l1.pop() == "(" );
@@ -242,7 +242,7 @@ class Lexer
 			`more than`,
 			`equal to`,
 			`has key`,
-			`[A-Za-z_]+`,                     // identifiers and keywords
+			`[A-Za-z][A-Za-z_0-9]*`,          // identifiers and keywords
 			`->`,                             // function return
 			`<-`,                             // inheritance
 			`\.\.`,                           // range and slice operator

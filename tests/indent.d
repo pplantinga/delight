@@ -9,5 +9,5 @@ void main()
 
 	int c = add(1, 2);
 
-	int d = add(c, 2);
+	int d1 = add(c, 2);
 }

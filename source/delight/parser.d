@@ -259,7 +259,7 @@ class Parser
 		assert( p.identify_token( "int" ) == "type" );
 		assert( p.identify_token( "long" ) == "type" );
 		assert( p.identify_token( "class" ) == "user type" );
-		assert( p.identify_token( "asdf" ) == "identifier" );
+		assert( p.identify_token( "asdf1" ) == "identifier" );
 	}
 	
 	/**
