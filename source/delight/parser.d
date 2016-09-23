@@ -1275,7 +1275,7 @@ class Parser
 	string instantiation_state( string token )
 	{
 		check_token( token, "new" );
-		check_token_type( l.peek(), "class identifier" );
+
 		string identifier = "new " ~ parse_type( l.pop() );
 		
 		check_token( l.pop(), "(" );

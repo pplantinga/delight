@@ -11,4 +11,7 @@ void main()
 	int[] c = a[1 .. $];
 	int[string] d = ["a": 1, "b": 2];
 	d["a"] = 3;
+	int[] e;
+	float[][] f = new float[][](6, 8);
+	f[4][4] = 5;
 }
