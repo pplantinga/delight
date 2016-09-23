@@ -4,7 +4,7 @@ pure int add(int a, int b)
 	return a + b;
 }
 
-pure int[][] args(int a, int b, int c, int d, int e, double f, double g = 10.0, int[] so_many_args)
+pure int[][] args(int a, int b, int c, int d, int e, double f, double g = 10.0, int[] so_many_args = null)
 {
 	return [[2], [3]];
 }

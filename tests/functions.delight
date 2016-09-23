@@ -4,7 +4,7 @@ function add(int a, b -> int):
 function args(
 	int a, b, c, d, e,
 	double f, g = 10.0,
-	int[] so_many_args
+	int[] so_many_args = NULL
 	->
 	int[,]
 ):

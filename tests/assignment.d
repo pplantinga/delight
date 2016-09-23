@@ -1,4 +1,4 @@
-pure auto template(T)(T var)
+pure auto add5(T)(T var)
 {
 	T x = var + 5;
 	return x;
@@ -20,7 +20,7 @@ void main()
 	d ^^= 3;
 
 	auto i = 5;
-	i -= template(2);
+	i -= add5(2);
 	i += 4_000;
 	i %= 7;
 	i /= 3;
