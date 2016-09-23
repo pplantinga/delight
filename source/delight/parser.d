@@ -158,7 +158,7 @@ class Parser
 		/// Unfortunately, associative array literals
 		/// can only happen inside a function in D
 		symbol_regexes = [
-			"assignment operator" : regex( `^[+*%^/~-]?=$` ),
+			"assignment operator" : regex( `^[+*%^/~&|-]?=$` ),
 			"attribute"           : regexify( attributes ),
 			"character literal"   : regex( `^'\\?.'$` ),
 			"class identifier"    : regex( `^[A-Z][a-z][A-Za-z_]*$` ),
@@ -172,7 +172,7 @@ class Parser
 			"logical"             : regexify( logical ),
 			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
 			"number literal"      : regex( `^\d[0-9_]*\.?[0-9_]*(e-?[0-9_]+)?$` ),
-			"operator"            : regex( `^([+*%^/~-]|\.\.)$` ),
+			"operator"            : regex( `^([+*%^/~&|-]|\.\.|xor)$` ),
 			"punctuation"         : regex( `^([.,!:(){}\[\]#]|#\.|->)$` ),
 			"statement"           : regexify( statements ),
 			"string literal"      : regex( `^".*"$` ),
@@ -245,6 +245,7 @@ class Parser
 		assert( p.identify_token( "-" ) == "operator" );
 		assert( p.identify_token( "^" ) == "operator" );
 		assert( p.identify_token( ".." ) == "operator" );
+		assert( p.identify_token( "xor" ) == "operator" );
 		assert( p.identify_token( "." ) == "punctuation" );
 		assert( p.identify_token( ":" ) == "punctuation" );
 		assert( p.identify_token( "#" ) == "punctuation" );
@@ -1063,7 +1064,8 @@ class Parser
 			"not less than": ">=",
 			"not more than": "<=",
 			"not is": "!is",
-			"^": "^^"
+			"^": "^^",
+			"xor": "^"
 		];
 
 		while ( identify_token( l.peek() ) == "operator"

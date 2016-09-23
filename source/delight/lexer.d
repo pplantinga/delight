@@ -246,8 +246,8 @@ class Lexer
 			`->`,                             // function return
 			`<-`,                             // inheritance
 			`\.\.`,                           // range and slice operator
-			`[+*%/~^-]?=`,                    // assignment operators
-			`[.,!:\[\]{}()+*~/%\n^$-;]`       // punctuation and operators
+			`[+*%/~^&|-]?=`,                  // assignment operators
+			`[.,!:\[\]{}()+*~/%\n^$-;&|]`     // punctuation and operators
 		];
 		/// The almighty token regex
 		auto r = regex( join( regexes, "|" ) );
