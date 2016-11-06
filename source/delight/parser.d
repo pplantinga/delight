@@ -963,8 +963,19 @@ class Parser
 			
 				// template instance
 				case "!":
-					check_token_type( l.peek(), "type", "class identifier" );
-					identifier ~= "!" ~ l.pop();
+					identifier ~= "!";
+					if ( l.peek() == "(" )
+					{
+						identifier ~= l.pop();
+						identifier ~= identifier_state( l.pop() );
+						check_token( l.peek(), ")");
+						identifier ~= l.pop();
+					}
+					else {
+						check_token_type( l.peek(),
+							"type", "class identifier", "identifier" );
+						identifier ~= l.pop();
+					}
 					break;
 			
 				// class member
