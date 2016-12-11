@@ -939,7 +939,11 @@ class Parser
 	/// Determine what kind of variable this is. 
 	string identifier_state( string token )
 	{
-		check_token_type( token, "identifier", "constant", "constructor" );
+		check_token_type( token,
+				"identifier",
+				"constant",
+				"constructor",
+				"class identifier");
 
 		string identifier = token;
 		
@@ -1129,6 +1133,7 @@ class Parser
 			case "identifier":
 			case "constant":
 			case "constructor":
+			case "class identifier":
 				return identifier_state( token );
 			default:
 				switch( token )
