@@ -972,6 +972,10 @@ class Parser
 					{
 						identifier ~= l.pop();
 						identifier ~= identifier_state( l.pop() );
+						if (l.peek() == "=>") {
+							identifier ~= l.pop();
+							identifier ~= identifier_state( l.pop() );
+						}
 						check_token( l.peek(), ")");
 						identifier ~= l.pop();
 					}

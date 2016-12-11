@@ -245,6 +245,7 @@ class Lexer
 			`[A-Za-z][A-Za-z_0-9]*`,          // identifiers and keywords
 			`->`,                             // function return
 			`<-`,                             // inheritance
+			`=>`,                             // Lambdas
 			`\.\.`,                           // range and slice operator
 			`[+*%/~^&|-]?=`,                  // assignment operators
 			`[.,!:\[\]{}()+*~/%\n^$-;&|]`     // punctuation and operators
