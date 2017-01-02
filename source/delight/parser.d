@@ -981,7 +981,9 @@ class Parser
 					}
 					else {
 						check_token_type( l.peek(),
-							"type", "class identifier", "identifier" );
+							"type", "class identifier", "identifier",
+							"string literal", "number literal",
+							"character literal");
 						identifier ~= l.pop();
 					}
 					break;
