@@ -234,7 +234,7 @@ class Lexer
 
 		string[] regexes = [
 			`#.*\n`,                          // inline comments
-			`".*?"`,                          // string literals
+			`".*?(?<!\\)"`,                   // string literals
 			"`.*?`",
 			`'\\?.'`,                         // character literals
 			`\d[0-9_]*\.?[0-9_]*e?-?[0-9_]*`, // number literals
