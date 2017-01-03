@@ -970,14 +970,7 @@ class Parser
 					identifier ~= "!";
 					if ( l.peek() == "(" )
 					{
-						identifier ~= l.pop();
-						identifier ~= identifier_state( l.pop() );
-						if (l.peek() == "=>") {
-							identifier ~= l.pop();
-							identifier ~= identifier_state( l.pop() );
-						}
-						check_token( l.peek(), ")");
-						identifier ~= l.pop();
+						identifier ~= l.pop() ~ function_call_state(l.pop());
 					}
 					else {
 						check_token_type( l.peek(),
