@@ -1,4 +1,6 @@
 import std.stdio : writeln;
+import std.algorithm;
+
 pure int add(int a, int b)
 {
 	return a + b;
@@ -32,6 +34,8 @@ void main()
 	int c = add(2, 1);
 
 	int d = divide!int(2, 1);
+
+	auto e = map!(f => f * 2)(args(1, 2, 3, 4, 5, 6));
 
 	divideAdd(c, d);
 	

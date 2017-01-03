@@ -1,3 +1,5 @@
+import std.algorithm
+
 function add(int a, b -> int):
 	return a + b
 
@@ -26,6 +28,8 @@ procedure main:
 	int c = add(2, 1)
 
 	int d = divide!int(2, 1)
+
+	auto e = map!(f => f * 2)(args(1,2,3,4,5,6))
 	
 	divideAdd(c, d)
 

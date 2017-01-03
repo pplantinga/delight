@@ -172,7 +172,7 @@ class Parser
 			"logical"             : regexify( logical ),
 			"newline"             : regex( `^(\n|(in|de)dent|begin)$` ),
 			"number literal"      : regex( `^\d[0-9_]*\.?[0-9_]*(e-?[0-9_]+)?$` ),
-			"operator"            : regex( `^([+*%^/~&|-]|\.\.|xor)$` ),
+			"operator"            : regex( `^([+*%^/~&|-]|\.\.|xor|=>)$` ),
 			"punctuation"         : regex( `^([.,!:(){}\[\]#]|#\.|->)$` ),
 			"statement"           : regexify( statements ),
 			"string literal"      : regex( `^".*"$` ),
@@ -970,7 +970,8 @@ class Parser
 					identifier ~= "!";
 					if ( l.peek() == "(" )
 					{
-						identifier ~= l.pop() ~ function_call_state(l.pop());
+						identifier ~= l.pop();
+						identifier ~= function_call_state(l.pop());
 					}
 					else {
 						check_token_type( l.peek(),
